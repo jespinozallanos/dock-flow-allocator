@@ -1,3 +1,4 @@
+
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 
@@ -118,7 +119,9 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
   return new Promise((resolve) => {
     setTimeout(() => {
       const allocations: Allocation[] = [];
+      // Only consider ships from the parameters
       const ships = [...params.ships];
+      // Filter to only include operational docks
       const docks = [...params.docks].filter(d => d.operationalStatus === 'operativo');
       const existingAllocations = [...params.existingAllocations];
       
@@ -157,6 +160,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
         }
         
         // Find docks that can handle this ship type and dimensions
+        // Only consider operational docks (already filtered above)
         const suitableDocks = docks.filter(dock => 
           dock.length >= ship.length && 
           dock.depth >= ship.draft && 
