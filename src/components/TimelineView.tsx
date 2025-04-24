@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Allocation, Ship, Dock } from "@/types/types";
@@ -11,33 +12,27 @@ interface TimelineViewProps {
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, days = 5 }) => {
-  // Get the first day of the timeline (today)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // Create an array of days for the timeline
   const timelineDays = Array.from({ length: days }, (_, index) => {
     const day = new Date(today);
     day.setDate(day.getDate() + index);
     return day;
   });
   
-  // Format date for display
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
   };
   
-  // Get ship and dock details by ID
   const getShipById = (shipId: string) => ships.find(ship => ship.id === shipId);
   const getDockById = (dockId: string) => docks.find(dock => dock.id === dockId);
   
-  // Group allocations by dock
   const allocationsByDock = docks.reduce((acc, dock) => {
     acc[dock.id] = allocations.filter(allocation => allocation.dockId === dock.id);
     return acc;
   }, {} as Record<string, Allocation[]>);
 
-  // Check if allocation falls within the timeline day
   const isAllocationInDay = (allocation: Allocation, date: Date) => {
     const startTime = new Date(allocation.startTime);
     const endTime = new Date(allocation.endTime);
@@ -49,21 +44,49 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     return (startTime <= dayEnd && endTime >= dayStart);
   };
 
+  const getShipTypeClass = (type: string) => {
+    switch (type) {
+      case "container":
+        return "bg-orange-500";
+      case "bulk":
+        return "bg-green-500";
+      case "tanker":
+        return "bg-blue-500";
+      case "passenger":
+        return "bg-purple-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const translateStatus = (status: string) => {
+    switch (status) {
+      case "scheduled":
+        return "Programado";
+      case "in-progress":
+        return "En Progreso";
+      case "completed":
+        return "Completado";
+      default:
+        return status;
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Dock Allocation Timeline</CardTitle>
+        <CardTitle>Cronograma de Asignación de Diques</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="timeline" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="list">List View</TabsTrigger>
+            <TabsTrigger value="timeline">Cronograma</TabsTrigger>
+            <TabsTrigger value="list">Vista Lista</TabsTrigger>
           </TabsList>
           
           <TabsContent value="timeline" className="space-y-4">
             <div className="grid grid-cols-[100px_1fr] gap-4">
-              <div className="font-medium text-muted-foreground">Docks</div>
+              <div className="font-medium text-muted-foreground">Diques</div>
               <div className="grid grid-cols-5 gap-2">
                 {timelineDays.map((day, index) => (
                   <div key={index} className="text-center text-sm font-medium">
@@ -90,10 +113,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                             return (
                               <div 
                                 key={`${allocation.id}-${i}`}
-                                className="absolute inset-0 m-1 rounded bg-primary text-white text-xs p-1 truncate"
-                                title={`${ship?.name || 'Unknown Ship'} (${new Date(allocation.startTime).toLocaleTimeString()} - ${new Date(allocation.endTime).toLocaleTimeString()})`}
+                                className={`absolute inset-0 m-1 rounded text-white text-xs p-1 truncate ${ship ? getShipTypeClass(ship.type) : 'bg-gray-500'}`}
+                                title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
                               >
-                                {ship?.name || 'Ship'}
+                                {ship?.name || 'Buque'}
                               </div>
                             );
                           })}
@@ -109,7 +132,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
           <TabsContent value="list">
             <div className="space-y-4">
               {allocations.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No allocations scheduled</p>
+                <p className="text-center text-muted-foreground py-8">No hay asignaciones programadas</p>
               ) : (
                 allocations.map(allocation => {
                   const ship = getShipById(allocation.shipId);
@@ -118,21 +141,23 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                   return (
                     <div key={allocation.id} className="flex items-center gap-4 border-b pb-3">
                       <div className="w-1/4">
-                        <p className="font-medium">{ship?.name || 'Unknown Ship'}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{ship?.type}</p>
+                        <p className="font-medium">{ship?.name || 'Buque Desconocido'}</p>
+                        <p className="text-sm text-muted-foreground capitalize">{ship?.type === 'container' ? 'Contenedor' : 
+                          ship?.type === 'bulk' ? 'Granel' : 
+                          ship?.type === 'tanker' ? 'Tanquero' : 'Pasajeros'}</p>
                       </div>
                       <div className="w-1/4">
-                        <p className="font-medium">{dock?.name || 'Unknown Dock'}</p>
+                        <p className="font-medium">{dock?.name || 'Dique Desconocido'}</p>
                         <p className="text-sm text-muted-foreground">{dock?.length}m × {dock?.depth}m</p>
                       </div>
                       <div className="w-1/4">
                         <p className="text-sm">
-                          <span className="text-muted-foreground mr-1">Start:</span>
-                          {new Date(allocation.startTime).toLocaleString()}
+                          <span className="text-muted-foreground mr-1">Inicio:</span>
+                          {new Date(allocation.startTime).toLocaleString('es-ES')}
                         </p>
                         <p className="text-sm">
-                          <span className="text-muted-foreground mr-1">End:</span>
-                          {new Date(allocation.endTime).toLocaleString()}
+                          <span className="text-muted-foreground mr-1">Fin:</span>
+                          {new Date(allocation.endTime).toLocaleString('es-ES')}
                         </p>
                       </div>
                       <div className="w-1/4">
@@ -143,7 +168,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-orange-100 text-orange-800'}`
                         }>
-                          {allocation.status.charAt(0).toUpperCase() + allocation.status.slice(1)}
+                          {translateStatus(allocation.status)}
                         </div>
                       </div>
                     </div>
@@ -159,3 +184,4 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
 };
 
 export default TimelineView;
+
