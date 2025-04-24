@@ -8,7 +8,7 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
     // Using OpenWeatherMap API for Talcahuano, Chile
     // Coordinates for Talcahuano: -36.7247, -73.1169
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=-36.7247&lon=-73.1169&appid=b1b15e88fa797225412429c1c50c122a&units=metric`
+      `https://api.openweathermap.org/data/2.5/weather?lat=-36.7247&lon=-73.1169&appid=YOUR_API_KEY_HERE&units=metric`
     );
     
     if (!response.ok) {
@@ -149,13 +149,16 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       const docksAllocation: Record<string, Array<{ship: Ship, allocation: Allocation}>> = {};
       docks.forEach(dock => docksAllocation[dock.id] = []);
       
+      // Track allocated ships to prevent the same ship from being allocated multiple times
+      const allocatedShipIds = new Set<string>();
+      
       // Sort ships by priority first, then by arrival time
       ships.sort((a, b) => a.priority - b.priority || new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime());
       
       // For each ship, try to find a suitable dock
       for (const ship of ships) {
-        // Skip if the ship is already allocated in the existing allocations for the same time period
-        if (isShipAlreadyAllocated(ship, ship.arrivalTime, ship.departureTime, existingAllocations.concat(allocations))) {
+        // Skip if the ship is already allocated in any existing allocations
+        if (allocatedShipIds.has(ship.id) || isShipAlreadyAllocated(ship, ship.arrivalTime, ship.departureTime, existingAllocations)) {
           continue;
         }
         
@@ -182,6 +185,9 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
             
             allocations.push(newAllocation);
             docksAllocation[dock.id].push({ ship, allocation: newAllocation });
+            
+            // Mark this ship as allocated
+            allocatedShipIds.add(ship.id);
             break;
           }
         }

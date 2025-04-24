@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Allocation, Ship, Dock, TimelineViewMode } from "@/types/types";
@@ -126,6 +125,19 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     setCurrentDate(newDate);
   };
 
+  // Calculate grid columns class based on view mode
+  const getGridColumnsClass = () => {
+    if (viewMode === "week") {
+      return `grid-cols-${days}`;
+    } else {
+      // For month view, get the number of days in the month
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      return `grid-cols-${daysInMonth}`;
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -179,7 +191,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
           <TabsContent value="timeline" className="space-y-4">
             <div className="grid grid-cols-[100px_1fr] gap-2 overflow-x-auto">
               <div className="font-medium text-muted-foreground">Diques</div>
-              <div className={`grid ${viewMode === 'month' ? 'grid-cols-31' : 'grid-cols-5'} gap-1`}>
+              <div className={`grid ${getGridColumnsClass()} gap-1`}>
                 {timelineDays.map((day, index) => (
                   <div key={index} className="text-center text-xs font-medium">
                     {formatDate(day)}
@@ -192,7 +204,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                   <div className="text-sm font-medium truncate" title={dock.name}>
                     {dock.name}
                   </div>
-                  <div className={`grid ${viewMode === 'month' ? 'grid-cols-31' : 'grid-cols-5'} gap-1 items-center`}>
+                  <div className={`grid ${getGridColumnsClass()} gap-1 items-center`}>
                     {timelineDays.map((day, dayIndex) => {
                       const dayAllocations = allocationsByDock[dock.id]?.filter(
                         allocation => isAllocationInDay(allocation, day)

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -7,10 +6,11 @@ import DockCard from "@/components/DockCard";
 import ShipsTable from "@/components/ShipsTable";
 import ShipForm from "@/components/ShipForm";
 import TimelineView from "@/components/TimelineView";
+import DockManagementTab from "@/components/DockManagementTab";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -61,7 +61,6 @@ const DockAllocationDashboard = () => {
 
   const handleShipAdded = async (ship: Ship) => {
     setShips(prev => [...prev, ship]);
-    
     setActiveTab("ships");
   };
 
@@ -113,6 +112,14 @@ const DockAllocationDashboard = () => {
     }
   };
 
+  const handleDockUpdate = (updatedDock: Dock) => {
+    setDocks(prev => prev.map(dock => dock.id === updatedDock.id ? updatedDock : dock));
+    toast({
+      title: "Dique Actualizado",
+      description: `${updatedDock.name} ha sido actualizado correctamente`,
+    });
+  };
+
   const getShipById = (shipId: string | undefined) => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
@@ -146,6 +153,10 @@ const DockAllocationDashboard = () => {
             <TabsTrigger value="ships" className="flex items-center gap-1">
               <ShipIcon className="w-4 h-4" />
               Buques
+            </TabsTrigger>
+            <TabsTrigger value="docks" className="flex items-center gap-1">
+              <SettingsIcon className="w-4 h-4" />
+              Diques
             </TabsTrigger>
             <TabsTrigger value="weather" className="flex items-center gap-1">
               <CloudIcon className="w-4 h-4" />
@@ -332,6 +343,10 @@ const DockAllocationDashboard = () => {
           </Card>
           
           <ShipForm onShipAdded={handleShipAdded} />
+        </TabsContent>
+        
+        <TabsContent value="docks" className="space-y-8">
+          <DockManagementTab docks={docks} onDockUpdate={handleDockUpdate} />
         </TabsContent>
         
         <TabsContent value="weather">

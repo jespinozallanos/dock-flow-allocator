@@ -20,6 +20,7 @@ export interface Dock {
   name: string;
   length: number;
   depth: number;
+  width?: number; // Added width parameter
   specializations?: ShipType[];
   occupied?: boolean;
   occupiedBy?: string;
