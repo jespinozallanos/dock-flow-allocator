@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Allocation, Ship, Dock, TimelineViewMode } from "@/types/types";
@@ -50,7 +51,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     if (viewMode === "week") {
       return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
     } else {
-      return date.toLocaleDateString('es-ES', { day: 'numeric' });
+      return date.getDate().toString(); // Solo el día para vista mensual
     }
   };
   
@@ -125,19 +126,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     setCurrentDate(newDate);
   };
 
-  // Calculate grid columns class based on view mode
-  const getGridColumnsClass = () => {
-    if (viewMode === "week") {
-      return `grid-cols-${days}`;
-    } else {
-      // For month view, get the number of days in the month
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      return `grid-cols-${daysInMonth}`;
-    }
-  };
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -189,61 +177,64 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
           </div>
           
           <TabsContent value="timeline" className="space-y-4">
-            <div className="grid grid-cols-[100px_1fr] gap-2 overflow-x-auto">
-              <div className="font-medium text-muted-foreground">Diques</div>
-              <div className={`grid ${getGridColumnsClass()} gap-1`}>
-                {timelineDays.map((day, index) => (
-                  <div key={index} className="text-center text-xs font-medium">
-                    {formatDate(day)}
-                  </div>
-                ))}
-              </div>
-              
-              {docks.map(dock => (
-                <React.Fragment key={dock.id}>
-                  <div className="text-sm font-medium truncate" title={dock.name}>
-                    {dock.name}
-                  </div>
-                  <div className={`grid ${getGridColumnsClass()} gap-1 items-center`}>
-                    {timelineDays.map((day, dayIndex) => {
-                      const dayAllocations = allocationsByDock[dock.id]?.filter(
-                        allocation => isAllocationInDay(allocation, day)
-                      ) || [];
-                      
-                      return (
-                        <div key={dayIndex} className="h-12 relative border rounded bg-muted bg-opacity-50">
-                          {dayAllocations.length > 0 ? (
-                            <div className="absolute inset-0 flex flex-col">
-                              {dayAllocations.map((allocation, i) => {
-                                const ship = getShipById(allocation.shipId);
-                                // Calculate height based on number of allocations
-                                const height = `${100 / dayAllocations.length}%`;
-                                const top = `${(100 / dayAllocations.length) * i}%`;
-                                
-                                return (
-                                  <div 
-                                    key={`${allocation.id}-${i}`}
-                                    className={`absolute rounded text-white text-xs p-1 truncate ${ship ? getShipTypeClass(ship.type) : 'bg-gray-500'}`}
-                                    style={{ 
-                                      height, 
-                                      top, 
-                                      left: '2px', 
-                                      right: '2px' 
-                                    }}
-                                    title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
-                                  >
-                                    {ship?.name || 'Buque'}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </React.Fragment>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed border-collapse">
+                <thead>
+                  <tr>
+                    <th className="w-[100px] p-2 text-left font-medium text-muted-foreground border-r">Diques</th>
+                    {timelineDays.map((day, index) => (
+                      <th key={index} className="p-2 text-center text-xs font-medium">
+                        {formatDate(day)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {docks.map(dock => (
+                    <tr key={dock.id} className="border-t">
+                      <td className="p-2 text-sm font-medium border-r">
+                        {dock.name}
+                      </td>
+                      {timelineDays.map((day, dayIndex) => {
+                        const dayAllocations = allocationsByDock[dock.id]?.filter(
+                          allocation => isAllocationInDay(allocation, day)
+                        ) || [];
+                        
+                        return (
+                          <td key={dayIndex} className="p-1 h-12 relative border">
+                            {dayAllocations.length > 0 ? (
+                              <div className="absolute inset-0 flex flex-col">
+                                {dayAllocations.map((allocation, i) => {
+                                  const ship = getShipById(allocation.shipId);
+                                  // Calculate height based on number of allocations
+                                  const height = `${100 / dayAllocations.length}%`;
+                                  const top = `${(100 / dayAllocations.length) * i}%`;
+                                  
+                                  return (
+                                    <div 
+                                      key={`${allocation.id}-${i}`}
+                                      className={`absolute rounded text-white text-xs p-1 truncate ${ship ? getShipTypeClass(ship.type) : 'bg-gray-500'}`}
+                                      style={{ 
+                                        height, 
+                                        top, 
+                                        left: '2px', 
+                                        right: '2px' 
+                                      }}
+                                      title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
+                                    >
+                                      {ship?.name || 'Buque'}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </TabsContent>
           
