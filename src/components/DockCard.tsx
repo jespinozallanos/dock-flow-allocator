@@ -7,11 +7,15 @@ import { AnchorIcon, ShipIcon } from 'lucide-react';
 
 interface DockCardProps {
   dock: Dock;
-  ship?: Ship;
+  ships?: Ship[];
+  ship?: Ship; // For backward compatibility
   className?: string;
 }
 
-const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
+const DockCard: React.FC<DockCardProps> = ({ dock, ships = [], ship, className = "" }) => {
+  // For backward compatibility
+  const allShips = ships.length > 0 ? ships : (ship ? [ship] : []);
+  
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString('es-ES', { 
@@ -30,6 +34,36 @@ const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
         return 'bg-red-500';
       default:
         return 'bg-gray-500';
+    }
+  };
+  
+  const getShipTypeClass = (type: string) => {
+    switch (type) {
+      case "container":
+        return "text-blue-600";
+      case "bulk":
+        return "text-green-600";
+      case "tanker":
+        return "text-red-600";
+      case "passenger":
+        return "text-purple-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+
+  const translateShipType = (type: string) => {
+    switch (type) {
+      case 'container':
+        return 'Contenedor';
+      case 'bulk':
+        return 'Granel';
+      case 'tanker':
+        return 'Tanquero';
+      case 'passenger':
+        return 'Pasajeros';
+      default:
+        return type;
     }
   };
 
@@ -69,9 +103,7 @@ const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
               <span className="flex gap-1">
                 {dock.specializations.map((spec, i) => (
                   <Badge key={i} variant="outline" className="text-xs">
-                    {spec === 'container' ? 'Contenedor' :
-                     spec === 'bulk' ? 'Granel' :
-                     spec === 'tanker' ? 'Tanquero' : 'Pasajeros'}
+                    {translateShipType(spec)}
                   </Badge>
                 ))}
               </span>
@@ -79,19 +111,27 @@ const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
           )}
         </div>
         
-        {dock.occupied && ship && (
+        {dock.occupied && allShips.length > 0 && (
           <div className="mt-4 pt-4 border-t">
-            <div className="flex items-center gap-2 mb-2">
-              {ship.type === 'container' ? <ShipIcon className="h-6 w-6 text-orange-500" /> :
-               ship.type === 'bulk' ? <ShipIcon className="h-6 w-6 text-green-500" /> :
-               ship.type === 'tanker' ? <ShipIcon className="h-6 w-6 text-blue-500" /> :
-               <ShipIcon className="h-6 w-6 text-purple-500" />}
-              <h4 className="font-medium">{ship.name}</h4>
-            </div>
-            <div className="text-sm space-y-1">
-              <div className="text-muted-foreground">
-                Hasta: {formatDate(dock.occupiedUntil)}
-              </div>
+            <h4 className="font-medium mb-2">Buques asignados ({allShips.length})</h4>
+            <div className="space-y-3">
+              {allShips.map((ship, index) => (
+                <div key={ship.id} className="flex items-start gap-2">
+                  <ShipIcon className={`h-5 w-5 mt-0.5 ${getShipTypeClass(ship.type)}`} />
+                  <div>
+                    <div className="font-medium">{ship.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {translateShipType(ship.type)} • {ship.length}m × {ship.draft}m
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {dock.occupiedUntil && (
+                <div className="text-sm text-muted-foreground mt-2">
+                  Ocupado hasta: {formatDate(dock.occupiedUntil)}
+                </div>
+              )}
             </div>
           </div>
         )}

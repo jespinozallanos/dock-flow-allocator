@@ -1,3 +1,4 @@
+
 // Ships and Dock types
 export type ShipType = 'container' | 'bulk' | 'tanker' | 'passenger';
 export type OperationalStatus = 'operativo' | 'mantenimiento' | 'fuera-de-servicio';
@@ -38,6 +39,23 @@ export interface Allocation {
   status: 'scheduled' | 'in-progress' | 'completed';
 }
 
+// Weather data structure
+export interface WeatherData {
+  location: string;
+  timestamp: string;
+  tide: {
+    current: number;
+    unit: string;
+    minimum: number;
+  };
+  wind: {
+    speed: number;
+    direction: string;
+    unit: string;
+    maximum: number;
+  };
+}
+
 // Mock data for Python model simulation
 export interface PythonModelParams {
   ships: Ship[];
@@ -53,6 +71,8 @@ export interface PythonModelResult {
     dockUtilization: number;
     conflicts: number;
   };
+  weatherData?: WeatherData;
+  weatherWarning?: boolean;
 }
 
 export type TabOption = 'dashboard' | 'allocation' | 'ships' | 'docks' | 'history';

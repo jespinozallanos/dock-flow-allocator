@@ -1,16 +1,18 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
-import { Ship, Dock, Allocation } from "@/types/types";
+import { Ship, Dock, Allocation, WeatherData } from "@/types/types";
 import DockCard from "@/components/DockCard";
 import ShipsTable from "@/components/ShipsTable";
 import ShipForm from "@/components/ShipForm";
 import TimelineView from "@/components/TimelineView";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus } from "@/services/allocationService";
-import { AnchorIcon, ShipIcon, TimerIcon } from "lucide-react";
+import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -19,6 +21,8 @@ const DockAllocationDashboard = () => {
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [optimizationCriteria, setOptimizationCriteria] = useState<'waiting_time' | 'dock_utilization' | 'balanced'>('balanced');
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [weatherWarning, setWeatherWarning] = useState(false);
   
   const { toast } = useToast();
 
@@ -26,15 +30,17 @@ const DockAllocationDashboard = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const [shipsData, docksData, allocationsData] = await Promise.all([
+        const [shipsData, docksData, allocationsData, weather] = await Promise.all([
           getShips(),
           getDocks(),
-          getAllocations()
+          getAllocations(),
+          fetchWeatherData()
         ]);
         
         setShips(shipsData);
         setDocks(docksData);
         setAllocations(allocationsData);
+        setWeatherData(weather);
         
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
@@ -42,7 +48,7 @@ const DockAllocationDashboard = () => {
         console.error("Error loading data:", error);
         toast({
           title: "Error",
-          description: "Failed to load data",
+          description: "Error al cargar datos",
           variant: "destructive"
         });
       } finally {
@@ -61,6 +67,7 @@ const DockAllocationDashboard = () => {
 
   const handleRunAllocationModel = async () => {
     setIsLoading(true);
+    setWeatherWarning(false);
     
     try {
       const modelParams = {
@@ -72,17 +79,28 @@ const DockAllocationDashboard = () => {
       
       const result = await runAllocationModel(modelParams);
       
-      setAllocations(prev => [...prev, ...result.allocations]);
-      
-      const updatedDocks = await updateDockStatus([...allocations, ...result.allocations]);
-      setDocks(updatedDocks);
-      
-      toast({
-        title: "Asignación Completada",
-        description: `${result.allocations.length} buques asignados con éxito`
-      });
-      
-      setActiveTab("dashboard");
+      if (result.weatherWarning) {
+        setWeatherWarning(true);
+        setWeatherData(result.weatherData || null);
+        toast({
+          title: "Advertencia",
+          description: "Condiciones climáticas inadecuadas para asignación de buques",
+          variant: "default"
+        });
+      } else {
+        setAllocations(prev => [...prev, ...result.allocations]);
+        setWeatherData(result.weatherData || null);
+        
+        const updatedDocks = await updateDockStatus([...allocations, ...result.allocations]);
+        setDocks(updatedDocks);
+        
+        toast({
+          title: "Asignación Completada",
+          description: `${result.allocations.length} buques asignados con éxito`
+        });
+        
+        setActiveTab("dashboard");
+      }
     } catch (error) {
       console.error("Error running allocation model:", error);
       toast({
@@ -98,6 +116,13 @@ const DockAllocationDashboard = () => {
   const getShipById = (shipId: string | undefined) => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
+  };
+  
+  // Get occupied ships from comma-separated occupiedBy string
+  const getShipsFromOccupiedString = (occupiedBy: string | undefined) => {
+    if (!occupiedBy) return [];
+    const shipIds = occupiedBy.split(',');
+    return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
 
   return (
@@ -122,7 +147,26 @@ const DockAllocationDashboard = () => {
               <ShipIcon className="w-4 h-4" />
               Buques
             </TabsTrigger>
+            <TabsTrigger value="weather" className="flex items-center gap-1">
+              <CloudIcon className="w-4 h-4" />
+              Clima
+            </TabsTrigger>
           </TabsList>
+          
+          {weatherData && (
+            <div className="hidden md:flex items-center text-sm gap-4">
+              <div className={`flex items-center gap-1 ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+                <span>Marea:</span>
+                <span className="font-medium">{weatherData.tide.current.toFixed(1)}m</span>
+                <span className="text-xs">(Mín: 7m)</span>
+              </div>
+              <div className={`flex items-center gap-1 ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                <span>Viento:</span>
+                <span className="font-medium">{weatherData.wind.speed.toFixed(1)} nudos</span>
+                <span className="text-xs">(Máx: 15 nudos)</span>
+              </div>
+            </div>
+          )}
         </div>
         
         <TabsContent value="dashboard" className="space-y-8">
@@ -160,6 +204,47 @@ const DockAllocationDashboard = () => {
             </Card>
           </div>
           
+          {weatherData && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <CloudIcon className="h-5 w-5" />
+                  Condiciones Climáticas - {weatherData.location}
+                </CardTitle>
+                <CardDescription>
+                  Actualizado: {new Date(weatherData.timestamp).toLocaleString('es-ES')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Nivel de Marea:</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg font-bold ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+                        {weatherData.tide.current.toFixed(1)} {weatherData.tide.unit}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        (Mínimo: {weatherData.tide.minimum} {weatherData.tide.unit})
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Velocidad del Viento:</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg font-bold ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                        {weatherData.wind.speed.toFixed(1)} {weatherData.wind.unit}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        (Máximo: {weatherData.wind.maximum} {weatherData.wind.unit})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
           <TimelineView 
             allocations={allocations} 
             ships={ships} 
@@ -174,7 +259,7 @@ const DockAllocationDashboard = () => {
               <DockCard 
                 key={dock.id} 
                 dock={dock}
-                ship={getShipById(dock.occupiedBy)}
+                ships={getShipsFromOccupiedString(dock.occupiedBy)}
               />
             ))}
           </div>
@@ -189,6 +274,15 @@ const DockAllocationDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {weatherWarning && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTitle>Condiciones climáticas inadecuadas</AlertTitle>
+                  <AlertDescription>
+                    Las condiciones actuales de marea ({weatherData?.tide.current.toFixed(1)} m) y/o viento ({weatherData?.wind.speed.toFixed(1)} nudos) no permiten la asignación de buques. Se requiere marea mínima de 7m y viento máximo de 15 nudos.
+                  </AlertDescription>
+                </Alert>
+              )}
+            
               <div className="max-w-md">
                 <label className="text-sm font-medium block mb-2">Criterios de Optimización</label>
                 <Select 
@@ -238,6 +332,123 @@ const DockAllocationDashboard = () => {
           </Card>
           
           <ShipForm onShipAdded={handleShipAdded} />
+        </TabsContent>
+        
+        <TabsContent value="weather">
+          <Card>
+            <CardHeader>
+              <CardTitle>Condiciones Climáticas - Talcahuano, Chile</CardTitle>
+              <CardDescription>
+                Información en tiempo real de marea y viento
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {weatherData ? (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Información de Marea</CardTitle>
+                        <CardDescription>
+                          Entrada de buques permitida con marea ≥ 7m
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground text-sm">Nivel actual:</span>
+                            <div className="flex items-baseline gap-2">
+                              <span className={`text-3xl font-bold ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+                                {weatherData.tide.current.toFixed(1)}
+                              </span>
+                              <span>{weatherData.tide.unit}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Mínimo requerido:</span>
+                            <span className="font-medium">{weatherData.tide.minimum} {weatherData.tide.unit}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Estado:</span>
+                            <span className={`font-medium ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+                              {weatherData.tide.current >= 7 ? 'Apto para operación' : 'No apto para operación'}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Información de Viento</CardTitle>
+                        <CardDescription>
+                          Entrada de buques permitida con viento ≤ 15 nudos
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground text-sm">Velocidad actual:</span>
+                            <div className="flex items-baseline gap-2">
+                              <span className={`text-3xl font-bold ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                                {weatherData.wind.speed.toFixed(1)}
+                              </span>
+                              <span>{weatherData.wind.unit}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Máximo permitido:</span>
+                            <span className="font-medium">{weatherData.wind.maximum} {weatherData.wind.unit}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Dirección:</span>
+                            <span className="font-medium">{weatherData.wind.direction}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Estado:</span>
+                            <span className={`font-medium ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                              {weatherData.wind.speed <= 15 ? 'Apto para operación' : 'No apto para operación'}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <Button onClick={async () => {
+                    try {
+                      setIsLoading(true);
+                      const newWeatherData = await fetchWeatherData();
+                      setWeatherData(newWeatherData);
+                      toast({
+                        title: "Datos Actualizados",
+                        description: "Información climática actualizada correctamente"
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: "No se pudo actualizar la información climática",
+                        variant: "destructive"
+                      });
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }} disabled={isLoading}>
+                    {isLoading ? "Actualizando..." : "Actualizar Datos Climáticos"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Cargando datos climáticos...</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

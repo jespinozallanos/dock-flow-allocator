@@ -47,15 +47,15 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
   const getShipTypeClass = (type: string) => {
     switch (type) {
       case "container":
-        return "bg-orange-500";
+        return "bg-blue-600";
       case "bulk":
-        return "bg-green-500";
+        return "bg-green-600";
       case "tanker":
-        return "bg-blue-500";
+        return "bg-red-600";
       case "passenger":
-        return "bg-purple-500";
+        return "bg-purple-600";
       default:
-        return "bg-gray-500";
+        return "bg-gray-600";
     }
   };
 
@@ -108,18 +108,32 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                       
                       return (
                         <div key={dayIndex} className="h-12 relative border rounded bg-muted bg-opacity-50">
-                          {dayAllocations.map((allocation, i) => {
-                            const ship = getShipById(allocation.shipId);
-                            return (
-                              <div 
-                                key={`${allocation.id}-${i}`}
-                                className={`absolute inset-0 m-1 rounded text-white text-xs p-1 truncate ${ship ? getShipTypeClass(ship.type) : 'bg-gray-500'}`}
-                                title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
-                              >
-                                {ship?.name || 'Buque'}
-                              </div>
-                            );
-                          })}
+                          {dayAllocations.length > 0 ? (
+                            <div className="absolute inset-0 flex flex-col">
+                              {dayAllocations.map((allocation, i) => {
+                                const ship = getShipById(allocation.shipId);
+                                // Calculate height based on number of allocations
+                                const height = `${100 / dayAllocations.length}%`;
+                                const top = `${(100 / dayAllocations.length) * i}%`;
+                                
+                                return (
+                                  <div 
+                                    key={`${allocation.id}-${i}`}
+                                    className={`absolute rounded text-white text-xs p-1 truncate ${ship ? getShipTypeClass(ship.type) : 'bg-gray-500'}`}
+                                    style={{ 
+                                      height, 
+                                      top, 
+                                      left: '4px', 
+                                      right: '4px' 
+                                    }}
+                                    title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
+                                  >
+                                    {ship?.name || 'Buque'}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </div>
                       );
                     })}
@@ -184,4 +198,3 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
 };
 
 export default TimelineView;
-
