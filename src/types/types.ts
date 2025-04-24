@@ -76,3 +76,6 @@ export interface PythonModelResult {
 }
 
 export type TabOption = 'dashboard' | 'allocation' | 'ships' | 'docks' | 'history';
+
+// Timeline view options
+export type TimelineViewMode = 'week' | 'month';

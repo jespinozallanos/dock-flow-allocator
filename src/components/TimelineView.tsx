@@ -1,8 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Allocation, Ship, Dock } from "@/types/types";
+import { Allocation, Ship, Dock, TimelineViewMode } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ChevronLeftIcon, ChevronRightIcon, CalendarDaysIcon, CalendarIcon } from "lucide-react";
 
 interface TimelineViewProps {
   allocations: Allocation[];
@@ -12,17 +14,49 @@ interface TimelineViewProps {
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, days = 5 }) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const [viewMode, setViewMode] = useState<TimelineViewMode>("week");
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   
-  const timelineDays = Array.from({ length: days }, (_, index) => {
-    const day = new Date(today);
-    day.setDate(day.getDate() + index);
-    return day;
-  });
+  const generateTimelineDays = (mode: TimelineViewMode, baseDate: Date): Date[] => {
+    const result: Date[] = [];
+    const startDate = new Date(baseDate);
+    
+    // Reset to the beginning of the week/month
+    if (mode === "week") {
+      // Start from today and show the next n days
+      startDate.setHours(0, 0, 0, 0);
+      for (let i = 0; i < days; i++) {
+        const day = new Date(startDate);
+        day.setDate(day.getDate() + i);
+        result.push(day);
+      }
+    } else if (mode === "month") {
+      // Start from the first day of the month
+      const year = startDate.getFullYear();
+      const month = startDate.getMonth();
+      const lastDay = new Date(year, month + 1, 0).getDate(); // Get last day of the month
+      
+      for (let i = 1; i <= lastDay; i++) {
+        const day = new Date(year, month, i);
+        result.push(day);
+      }
+    }
+    
+    return result;
+  };
+
+  const timelineDays = generateTimelineDays(viewMode, currentDate);
   
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
+    if (viewMode === "week") {
+      return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    } else {
+      return date.toLocaleDateString('es-ES', { day: 'numeric' });
+    }
+  };
+  
+  const formatMonthYear = (date: Date) => {
+    return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
   };
   
   const getShipById = (shipId: string) => ships.find(ship => ship.id === shipId);
@@ -72,24 +106,82 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     }
   };
 
+  const handlePreviousPeriod = () => {
+    const newDate = new Date(currentDate);
+    if (viewMode === "week") {
+      newDate.setDate(newDate.getDate() - days);
+    } else {
+      newDate.setMonth(newDate.getMonth() - 1);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const handleNextPeriod = () => {
+    const newDate = new Date(currentDate);
+    if (viewMode === "week") {
+      newDate.setDate(newDate.getDate() + days);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Cronograma de Asignación de Diques</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>Cronograma de Asignación de Diques</CardTitle>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handlePreviousPeriod}>
+              <ChevronLeftIcon className="h-4 w-4" />
+            </Button>
+            <div className="font-medium min-w-[150px] text-center">
+              {viewMode === "month" 
+                ? formatMonthYear(currentDate)
+                : `Próximos ${days} días`
+              }
+            </div>
+            <Button variant="outline" size="sm" onClick={handleNextPeriod}>
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="timeline" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="timeline">Cronograma</TabsTrigger>
-            <TabsTrigger value="list">Vista Lista</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="timeline">Cronograma</TabsTrigger>
+              <TabsTrigger value="list">Vista Lista</TabsTrigger>
+            </TabsList>
+            <div className="flex gap-2">
+              <Button 
+                variant={viewMode === "week" ? "secondary" : "outline"} 
+                size="sm" 
+                onClick={() => setViewMode("week")}
+                className="flex items-center gap-1"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                Semana
+              </Button>
+              <Button 
+                variant={viewMode === "month" ? "secondary" : "outline"} 
+                size="sm" 
+                onClick={() => setViewMode("month")}
+                className="flex items-center gap-1"
+              >
+                <CalendarDaysIcon className="h-4 w-4" />
+                Mes
+              </Button>
+            </div>
+          </div>
           
           <TabsContent value="timeline" className="space-y-4">
-            <div className="grid grid-cols-[100px_1fr] gap-4">
+            <div className="grid grid-cols-[100px_1fr] gap-2 overflow-x-auto">
               <div className="font-medium text-muted-foreground">Diques</div>
-              <div className="grid grid-cols-5 gap-2">
+              <div className={`grid ${viewMode === 'month' ? 'grid-cols-31' : 'grid-cols-5'} gap-1`}>
                 {timelineDays.map((day, index) => (
-                  <div key={index} className="text-center text-sm font-medium">
+                  <div key={index} className="text-center text-xs font-medium">
                     {formatDate(day)}
                   </div>
                 ))}
@@ -100,7 +192,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                   <div className="text-sm font-medium truncate" title={dock.name}>
                     {dock.name}
                   </div>
-                  <div className="grid grid-cols-5 gap-2 items-center">
+                  <div className={`grid ${viewMode === 'month' ? 'grid-cols-31' : 'grid-cols-5'} gap-1 items-center`}>
                     {timelineDays.map((day, dayIndex) => {
                       const dayAllocations = allocationsByDock[dock.id]?.filter(
                         allocation => isAllocationInDay(allocation, day)
@@ -123,8 +215,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                                     style={{ 
                                       height, 
                                       top, 
-                                      left: '4px', 
-                                      right: '4px' 
+                                      left: '2px', 
+                                      right: '2px' 
                                     }}
                                     title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
                                   >

@@ -5,24 +5,47 @@ import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 // Function to fetch real-time weather data for Talcahuano, Chile
 export const fetchWeatherData = async (): Promise<WeatherData> => {
   try {
-    // In a real app, this would call a weather API for Talcahuano
-    // For this demo, we'll simulate the result
+    // Using OpenWeatherMap API for Talcahuano, Chile
+    // Coordinates for Talcahuano: -36.7247, -73.1169
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=-36.7247&lon=-73.1169&appid=b1b15e88fa797225412429c1c50c122a&units=metric`
+    );
     
-    // Simulate network request with a delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    if (!response.ok) {
+      throw new Error('Error fetching weather data');
+    }
     
-    // Return simulated weather data
+    const data = await response.json();
+    
+    // Convert from OpenWeatherMap format to our WeatherData format
+    // Note: This is a simplified conversion as OpenWeatherMap doesn't provide tide data
+    // For tide data in real implementation, you would need a specialized marine weather API
+    
+    // Wind speed conversion from m/s to knots (1 m/s = 1.94384 knots)
+    const windSpeed = data.wind.speed * 1.94384;
+    
+    // For tide simulation, we'll use a sinusoidal function based on the current hour
+    // This is just for simulation - in production, use a real tide API
+    const hour = new Date().getHours();
+    const tideLevel = 7.0 + Math.sin(hour / 24 * 2 * Math.PI) * 1.2;
+    
     return {
       location: "Talcahuano, Chile",
       timestamp: new Date().toISOString(),
       tide: {
-        current: 7.2 + (Math.random() * 2 - 1), // Random between 6.2 and 8.2 meters
+        current: parseFloat(tideLevel.toFixed(1)),
         unit: "metros",
         minimum: 7.0, // Minimum required tide for ship entry
       },
       wind: {
-        speed: 8 + (Math.random() * 14), // Random between 8 and 22 knots
-        direction: "NW",
+        speed: parseFloat(windSpeed.toFixed(1)),
+        direction: data.wind.deg > 337.5 || data.wind.deg <= 22.5 ? "N" :
+                  data.wind.deg > 22.5 && data.wind.deg <= 67.5 ? "NE" :
+                  data.wind.deg > 67.5 && data.wind.deg <= 112.5 ? "E" :
+                  data.wind.deg > 112.5 && data.wind.deg <= 157.5 ? "SE" :
+                  data.wind.deg > 157.5 && data.wind.deg <= 202.5 ? "S" :
+                  data.wind.deg > 202.5 && data.wind.deg <= 247.5 ? "SW" :
+                  data.wind.deg > 247.5 && data.wind.deg <= 292.5 ? "W" : "NW",
         unit: "nudos",
         maximum: 15, // Maximum allowed wind for ship entry
       }
@@ -62,6 +85,32 @@ const hasAvailableSpace = (
   return (totalLengthAllocated + ship.length) <= dock.length;
 };
 
+// Check if ship is already allocated in the provided time period
+const isShipAlreadyAllocated = (
+  ship: Ship,
+  startTime: string,
+  endTime: string,
+  existingAllocations: Allocation[]
+): boolean => {
+  const newStartTime = new Date(startTime).getTime();
+  const newEndTime = new Date(endTime).getTime();
+  
+  // Find allocations for this ship
+  const shipAllocations = existingAllocations.filter(a => a.shipId === ship.id);
+  
+  // Check for time overlap
+  return shipAllocations.some(allocation => {
+    const existingStartTime = new Date(allocation.startTime).getTime();
+    const existingEndTime = new Date(allocation.endTime).getTime();
+    
+    // Check if there's an overlap in time periods
+    return (
+      (newStartTime <= existingEndTime && newEndTime >= existingStartTime) ||
+      (existingStartTime <= newEndTime && existingEndTime >= newStartTime)
+    );
+  });
+};
+
 // Mock Python model execution (in a real app, this would call a Python backend)
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
   // Get weather data
@@ -76,6 +125,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       const allocations: Allocation[] = [];
       const ships = [...params.ships];
       const docks = [...params.docks].filter(d => d.operationalStatus === 'operativo');
+      const existingAllocations = [...params.existingAllocations];
       
       // Weather status check
       const weatherSuitable = isWeatherSuitable(weatherData);
@@ -104,8 +154,10 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       
       // For each ship, try to find a suitable dock
       for (const ship of ships) {
-        // Skip if the ship is already allocated
-        if (allocations.some(a => a.shipId === ship.id)) continue;
+        // Skip if the ship is already allocated in the existing allocations for the same time period
+        if (isShipAlreadyAllocated(ship, ship.arrivalTime, ship.departureTime, existingAllocations.concat(allocations))) {
+          continue;
+        }
         
         // Find docks that can handle this ship type and dimensions
         const suitableDocks = docks.filter(dock => 
