@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Allocation, Ship, Dock, TimelineViewMode } from "@/types/types";
@@ -21,9 +20,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     const result: Date[] = [];
     const startDate = new Date(baseDate);
     
-    // Reset to the beginning of the week/month
     if (mode === "week") {
-      // Start from today and show the next n days
       startDate.setHours(0, 0, 0, 0);
       for (let i = 0; i < days; i++) {
         const day = new Date(startDate);
@@ -31,10 +28,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
         result.push(day);
       }
     } else if (mode === "month") {
-      // Start from the first day of the month
       const year = startDate.getFullYear();
       const month = startDate.getMonth();
-      const lastDay = new Date(year, month + 1, 0).getDate(); // Get last day of the month
+      const lastDay = new Date(year, month + 1, 0).getDate();
       
       for (let i = 1; i <= lastDay; i++) {
         const day = new Date(year, month, i);
@@ -51,7 +47,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     if (viewMode === "week") {
       return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
     } else {
-      return date.getDate().toString(); // Solo el día para vista mensual
+      return date.getDate().toString();
     }
   };
   
@@ -126,6 +122,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
     setCurrentDate(newDate);
   };
 
+  const operationalDocks = docks.filter(dock => dock.operationalStatus === 'operativo');
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -190,7 +188,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                   </tr>
                 </thead>
                 <tbody>
-                  {docks.map(dock => (
+                  {operationalDocks.map(dock => (
                     <tr key={dock.id} className="border-t">
                       <td className="p-2 text-sm font-medium border-r">
                         {dock.name}
@@ -206,7 +204,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ allocations, ships, docks, 
                               <div className="absolute inset-0 flex flex-col">
                                 {dayAllocations.map((allocation, i) => {
                                   const ship = getShipById(allocation.shipId);
-                                  // Calculate height based on number of allocations
                                   const height = `${100 / dayAllocations.length}%`;
                                   const top = `${(100 / dayAllocations.length) * i}%`;
                                   

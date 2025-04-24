@@ -1,4 +1,3 @@
-
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 
@@ -117,11 +116,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
   const weatherData = await fetchWeatherData();
   
   return new Promise((resolve) => {
-    // Simulate processing time
     setTimeout(() => {
-      // This is where we would normally send the request to a Python backend
-      // For this demo, we'll just simulate the result
-      
       const allocations: Allocation[] = [];
       const ships = [...params.ships];
       const docks = [...params.docks].filter(d => d.operationalStatus === 'operativo');
@@ -130,7 +125,6 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       // Weather status check
       const weatherSuitable = isWeatherSuitable(weatherData);
       
-      // If weather conditions are unsuitable, return with a weather warning
       if (!weatherSuitable) {
         resolve({
           allocations: [],
