@@ -1,6 +1,6 @@
-
 // Ships and Dock types
 export type ShipType = 'container' | 'bulk' | 'tanker' | 'passenger';
+export type OperationalStatus = 'operativo' | 'mantenimiento' | 'fuera-de-servicio';
 
 export interface Ship {
   id: string;
@@ -23,6 +23,9 @@ export interface Dock {
   occupied?: boolean;
   occupiedBy?: string;
   occupiedUntil?: string;
+  operationalStatus: OperationalStatus;
+  maxWindSpeed: number; // Maximum wind speed in knots
+  minTideLevel: number; // Minimum tide level in meters
 }
 
 export interface Allocation {

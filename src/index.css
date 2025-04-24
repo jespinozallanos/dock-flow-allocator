@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,60 +6,64 @@
   :root {
     --background: 210 33% 99%;
     --foreground: 222 47% 11%;
-
+    
+    --asmar-blue: 201 100% 36%;
+    --asmar-navy: 215 50% 23%;
+    --asmar-red: 358 91% 43%;
+    
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-
+    
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-
-    --primary: 201 100% 36%;
+    
+    --primary: var(--asmar-blue);
     --primary-foreground: 210 40% 98%;
-
-    --secondary: 186 100% 29%;
+    
+    --secondary: var(--asmar-navy);
     --secondary-foreground: 222 47% 11%;
-
+    
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 186 98% 40%;
+    
+    --accent: var(--asmar-red);
     --accent-foreground: 222.2 47.4% 11.2%;
-
+    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
+    
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 201 100% 36%;
-
+    --ring: var(--asmar-blue);
+    
     --radius: 0.5rem;
   }
 
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-
+    
     --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
-
+    
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-
+    
     --primary: 201 100% 36%;
     --primary-foreground: 222 47% 1%;
-
+    
     --secondary: 186 100% 29%;
     --secondary-foreground: 210 40% 98%;
-
+    
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
+    
     --accent: 186 98% 40%;
     --accent-foreground: 222 47% 11%;
-
+    
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
+    
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -90,4 +93,21 @@
   background-color: #EBF8FF;
   background-image: 
     radial-gradient(ellipse at 50% 150%, #c8e8f8 20%, transparent 70%);
+}
+
+/* Ship type colors */
+.ship-container {
+  @apply text-white p-2 rounded;
+}
+.ship-tanker {
+  @apply bg-blue-500;
+}
+.ship-bulk {
+  @apply bg-green-500;
+}
+.ship-passenger {
+  @apply bg-purple-500;
+}
+.ship-container {
+  @apply bg-orange-500;
 }

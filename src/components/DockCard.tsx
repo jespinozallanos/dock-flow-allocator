@@ -14,17 +14,23 @@ interface DockCardProps {
 const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', { 
+    return new Date(dateString).toLocaleString('es-ES', { 
       dateStyle: 'short',
       timeStyle: 'short'
     });
   };
 
-  // Determine which icon to display based on ship type
-  const getShipIcon = (shipType?: string) => {
-    if (!shipType) return <AnchorIcon className="h-6 w-6" />;
-  
-    return <ShipIcon className="h-6 w-6" />;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'operativo':
+        return 'bg-green-500';
+      case 'mantenimiento':
+        return 'bg-yellow-500';
+      case 'fuera-de-servicio':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
 
   return (
@@ -32,32 +38,40 @@ const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">{dock.name}</CardTitle>
-          {dock.occupied ? (
-            <Badge className="bg-primary">{dock.specializations?.[0] || 'Any'}</Badge>
-          ) : (
-            <Badge variant="outline">Available</Badge>
-          )}
+          <Badge className={getStatusColor(dock.operationalStatus)}>
+            {dock.operationalStatus.charAt(0).toUpperCase() + dock.operationalStatus.slice(1)}
+          </Badge>
         </div>
       </CardHeader>
       
       <CardContent>
         <div className="text-sm space-y-2">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Length:</span>
+            <span className="text-muted-foreground">Longitud:</span>
             <span>{dock.length}m</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Depth:</span>
+            <span className="text-muted-foreground">Profundidad:</span>
             <span>{dock.depth}m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Viento máx:</span>
+            <span>{dock.maxWindSpeed} nudos</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Marea mín:</span>
+            <span>{dock.minTideLevel}m</span>
           </div>
           
           {dock.specializations && dock.specializations.length > 0 && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Types:</span>
+              <span className="text-muted-foreground">Tipos:</span>
               <span className="flex gap-1">
                 {dock.specializations.map((spec, i) => (
                   <Badge key={i} variant="outline" className="text-xs">
-                    {spec}
+                    {spec === 'container' ? 'Contenedor' :
+                     spec === 'bulk' ? 'Granel' :
+                     spec === 'tanker' ? 'Tanquero' : 'Pasajeros'}
                   </Badge>
                 ))}
               </span>
@@ -68,12 +82,15 @@ const DockCard: React.FC<DockCardProps> = ({ dock, ship, className = "" }) => {
         {dock.occupied && ship && (
           <div className="mt-4 pt-4 border-t">
             <div className="flex items-center gap-2 mb-2">
-              {getShipIcon(ship.type)}
+              {ship.type === 'container' ? <ShipIcon className="h-6 w-6 text-orange-500" /> :
+               ship.type === 'bulk' ? <ShipIcon className="h-6 w-6 text-green-500" /> :
+               ship.type === 'tanker' ? <ShipIcon className="h-6 w-6 text-blue-500" /> :
+               <ShipIcon className="h-6 w-6 text-purple-500" />}
               <h4 className="font-medium">{ship.name}</h4>
             </div>
             <div className="text-sm space-y-1">
               <div className="text-muted-foreground">
-                Until: {formatDate(dock.occupiedUntil)}
+                Hasta: {formatDate(dock.occupiedUntil)}
               </div>
             </div>
           </div>

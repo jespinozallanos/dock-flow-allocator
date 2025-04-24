@@ -1,4 +1,3 @@
-
 import { Ship, Dock, Allocation } from '@/types/types';
 
 // Generate a random ID
@@ -12,7 +11,7 @@ const generateDate = (start: Date, end: Date) => {
 // Mock current date for the application
 export const CURRENT_DATE = new Date().toISOString();
 
-// Mock ships
+// Mock ships with Spanish descriptions
 export const mockShips: Ship[] = [
   {
     id: "s1",
@@ -22,7 +21,7 @@ export const mockShips: Ship[] = [
     draft: 14.5,
     arrivalTime: generateDate(new Date(), new Date(Date.now() + 24 * 60 * 60 * 1000)),
     departureTime: generateDate(new Date(Date.now() + 48 * 60 * 60 * 1000), new Date(Date.now() + 72 * 60 * 60 * 1000)),
-    cargoType: "Electronics",
+    cargoType: "Contenedores",
     priority: 2
   },
   {
@@ -33,7 +32,7 @@ export const mockShips: Ship[] = [
     draft: 12,
     arrivalTime: generateDate(new Date(), new Date(Date.now() + 12 * 60 * 60 * 1000)),
     departureTime: generateDate(new Date(Date.now() + 36 * 60 * 60 * 1000), new Date(Date.now() + 48 * 60 * 60 * 1000)),
-    cargoType: "Grain",
+    cargoType: "Grano",
     priority: 3
   },
   {
@@ -54,7 +53,7 @@ export const mockShips: Ship[] = [
     draft: 15,
     arrivalTime: generateDate(new Date(Date.now() + 6 * 60 * 60 * 1000), new Date(Date.now() + 12 * 60 * 60 * 1000)),
     departureTime: generateDate(new Date(Date.now() + 24 * 60 * 60 * 1000), new Date(Date.now() + 36 * 60 * 60 * 1000)),
-    cargoType: "Crude Oil",
+    cargoType: "Crudo",
     priority: 2
   },
   {
@@ -65,52 +64,67 @@ export const mockShips: Ship[] = [
     draft: 13.8,
     arrivalTime: generateDate(new Date(Date.now() + 12 * 60 * 60 * 1000), new Date(Date.now() + 24 * 60 * 60 * 1000)),
     departureTime: generateDate(new Date(Date.now() + 48 * 60 * 60 * 1000), new Date(Date.now() + 72 * 60 * 60 * 1000)),
-    cargoType: "Manufactured Goods",
+    cargoType: "Productos Manufacturados",
     priority: 2
   }
 ];
 
-// Mock docks
+// Updated mock docks with real names and operational conditions
 export const mockDocks: Dock[] = [
   {
     id: "d1",
-    name: "North Terminal 1",
+    name: "Mery",
     length: 350,
     depth: 15,
-    specializations: ["container"],
-    occupied: false
+    specializations: ["container", "bulk"],
+    occupied: false,
+    operationalStatus: "operativo",
+    maxWindSpeed: 25, // nudos
+    minTideLevel: 2.5, // metros
   },
   {
     id: "d2",
-    name: "North Terminal 2",
+    name: "Gutierrez",
     length: 300,
     depth: 14,
     specializations: ["container", "bulk"],
-    occupied: false
+    occupied: false,
+    operationalStatus: "operativo",
+    maxWindSpeed: 20,
+    minTideLevel: 2.0,
   },
   {
     id: "d3",
-    name: "South Terminal 1",
+    name: "DS1",
     length: 400,
     depth: 16,
     specializations: ["container", "tanker"],
-    occupied: false
+    occupied: false,
+    operationalStatus: "mantenimiento",
+    maxWindSpeed: 30,
+    minTideLevel: 3.0,
   },
   {
     id: "d4",
-    name: "Passenger Terminal",
+    name: "DS2",
     length: 350,
     depth: 10,
-    specializations: ["passenger"],
-    occupied: false
+    specializations: ["passenger", "bulk"],
+    occupied: false,
+    operationalStatus: "operativo",
+    maxWindSpeed: 22,
+    minTideLevel: 2.2,
   },
   {
     id: "d5",
-    name: "South Terminal 2",
+    name: "Talcahuano",
     length: 320,
     depth: 15,
     specializations: ["bulk", "tanker"],
-    occupied: false
+    occupied: false,
+    operationalStatus: "operativo",
+    maxWindSpeed: 28,
+    minTideLevel: 2.8,
   }
 ];
 
