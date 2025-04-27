@@ -1,4 +1,3 @@
-
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 
@@ -188,6 +187,18 @@ const isShipAlreadyAllocated = (
   });
 };
 
+// Check if allocated time matches or exceeds required time
+const isAllocationTimeValid = (
+  ship: Ship,
+  startTime: string,
+  endTime: string
+): boolean => {
+  const requiredDuration = new Date(ship.departureTime).getTime() - new Date(ship.arrivalTime).getTime();
+  const allocatedDuration = new Date(endTime).getTime() - new Date(startTime).getTime();
+  
+  return allocatedDuration >= requiredDuration;
+};
+
 // Mock Python model execution (in a real app, this would call a Python backend)
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
   // Get weather data
@@ -196,9 +207,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
   return new Promise((resolve) => {
     setTimeout(() => {
       const allocations: Allocation[] = [];
-      // Only consider ships from the parameters
       const ships = [...params.ships];
-      // Filter to only include operational docks
       const docks = [...params.docks].filter(d => d.operationalStatus === 'operativo');
       const existingAllocations = [...params.existingAllocations];
       
@@ -219,19 +228,15 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
         return;
       }
       
-      // Maps to track allocated ships per dock and their timing
       const docksAllocation: Record<string, Array<{ship: Ship, allocation: Allocation}>> = {};
       docks.forEach(dock => docksAllocation[dock.id] = []);
       
-      // Track allocated ships to prevent the same ship from being allocated multiple times
       const allocatedShipIds = new Set<string>();
       
-      // Sort ships by priority first, then by arrival time
       ships.sort((a, b) => a.priority - b.priority || new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime());
       
-      // For each ship, try to find a suitable dock
       for (const ship of ships) {
-        // Skip if the ship is already allocated in any existing allocations
+        // Skip if ship is already allocated
         if (allocatedShipIds.has(ship.id) || isShipAlreadyAllocated(ship, ship.arrivalTime, ship.departureTime, existingAllocations)) {
           continue;
         }
@@ -241,40 +246,44 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
           console.log(`Ship ${ship.name} operation outside safe tide window`);
           continue;
         }
+
+        // Ensure we're using the ship's scheduled times
+        const proposedStartTime = ship.arrivalTime;
+        const proposedEndTime = ship.departureTime;
         
-        // Find docks that can handle this ship type and dimensions
-        // Only consider operational docks (already filtered above)
+        // Verify allocation time is valid
+        if (!isAllocationTimeValid(ship, proposedStartTime, proposedEndTime)) {
+          console.log(`Ship ${ship.name} cannot be allocated for less than scheduled time`);
+          continue;
+        }
+        
+        // Find suitable docks
         const suitableDocks = docks.filter(dock => 
           dock.length >= ship.length && 
           dock.depth >= ship.draft && 
           (!dock.specializations || dock.specializations.includes(ship.type))
         );
         
-        // Find a dock with available space
         for (const dock of suitableDocks) {
           if (hasAvailableSpace(dock, ship, docksAllocation[dock.id])) {
-            // Create allocation
             const newAllocation = {
               id: Math.random().toString(36).substring(2, 9),
               shipId: ship.id,
               dockId: dock.id,
-              startTime: ship.arrivalTime,
-              endTime: ship.departureTime,
+              startTime: proposedStartTime,
+              endTime: proposedEndTime,
               created: new Date().toISOString(),
               status: 'scheduled' as const
             };
             
             allocations.push(newAllocation);
             docksAllocation[dock.id].push({ ship, allocation: newAllocation });
-            
-            // Mark this ship as allocated
             allocatedShipIds.add(ship.id);
             break;
           }
         }
       }
       
-      // Calculate metrics
       const metrics = {
         totalWaitingTime: Math.floor(Math.random() * 120),
         dockUtilization: 0.7 + Math.random() * 0.2,
