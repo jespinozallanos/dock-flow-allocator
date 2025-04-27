@@ -216,10 +216,51 @@ const DockAllocationDashboard = () => {
             </Card>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-marine-DEFAULT">Cronograma de Asignación</CardTitle>
+                  <CardDescription>Vista general de asignaciones programadas</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TimelineView 
+                    allocations={allocations} 
+                    ships={ships} 
+                    docks={docks}
+                    weatherData={weatherData || undefined}
+                  />
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-marine-DEFAULT text-xl">Buques Registrados</CardTitle>
+                    <CardDescription>Listado de todos los buques en el sistema</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ShipsTable 
+                      ships={ships} 
+                      onDeleteShip={handleDeleteShip}
+                    />
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveTab("ships")}
+                      className="ml-auto"
+                    >
+                      Gestionar Buques
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+            </div>
+
+            <div className="space-y-6">
               {weatherData && (
-                <Card className="border-marine-DEFAULT border-opacity-20 bg-marine-DEFAULT bg-opacity-5 mb-4">
+                <Card className="border-marine-DEFAULT border-opacity-20 bg-marine-DEFAULT bg-opacity-5">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
                       <CloudIcon className="h-5 w-5" />
@@ -259,28 +300,6 @@ const DockAllocationDashboard = () => {
                 </Card>
               )}
               
-              <TimelineView 
-                allocations={allocations} 
-                ships={ships} 
-                docks={docks}
-                weatherData={weatherData || undefined}
-              />
-
-              <div className="mt-8">
-                <h2 className="text-xl font-semibold mb-4 text-marine-DEFAULT">Estado Actual de los Diques</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {docks.map(dock => (
-                    <DockCard 
-                      key={dock.id} 
-                      dock={dock}
-                      ships={getShipsFromOccupiedString(dock.occupiedBy)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
               {weatherData?.tide.windows && (
                 <TideWindowDisplay 
                   tideWindows={weatherData.tide.windows} 
@@ -290,38 +309,17 @@ const DockAllocationDashboard = () => {
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-marine-DEFAULT">
-                    <div className="flex items-center gap-2">
-                      <WavesIcon className="h-5 w-5" />
-                      <span>Restricciones de Marea</span>
-                    </div>
-                  </CardTitle>
+                  <CardTitle className="text-marine-DEFAULT">Estado Actual de los Diques</CardTitle>
+                  <CardDescription>Disponibilidad y ocupación</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm">
-                      El sistema considera restricciones de ventanas de marea para la asignación segura de buques a los diques.
-                    </p>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-sm">
-                        <span>Nivel mínimo de marea:</span>
-                        <span className="font-medium">3.0 metros</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span>Ventanas de operación segura:</span>
-                        <span className="font-medium">
-                          {weatherData?.tide.windows?.filter(w => w.isSafe).length || 0} ventanas
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 bg-blue-50 p-3 rounded-md border border-blue-100">
-                      <p className="text-xs text-blue-800">
-                        La asignación de buques solo se realiza durante ventanas con niveles adecuados de marea.
-                      </p>
-                    </div>
-                  </div>
+                <CardContent className="space-y-4">
+                  {docks.map(dock => (
+                    <DockCard 
+                      key={dock.id} 
+                      dock={dock}
+                      ships={getShipsFromOccupiedString(dock.occupiedBy)}
+                    />
+                  ))}
                 </CardContent>
               </Card>
             </div>
