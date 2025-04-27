@@ -1,5 +1,5 @@
 
-import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData } from '@/types/types';
+import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 
 // Function to fetch real-time weather data for Talcahuano, Chile
@@ -29,6 +29,9 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
     const hour = new Date().getHours();
     const tideLevel = 7.0 + Math.sin(hour / 24 * 2 * Math.PI) * 1.2;
     
+    // Generate tide windows for the next 24 hours
+    const tideWindows = generateTideWindows();
+    
     return {
       location: "Talcahuano, Chile",
       timestamp: new Date().toISOString(),
@@ -36,6 +39,7 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
         current: parseFloat(tideLevel.toFixed(1)),
         unit: "metros",
         minimum: 7.0, // Minimum required tide for ship entry
+        windows: tideWindows,
       },
       wind: {
         speed: parseFloat(windSpeed.toFixed(1)),
@@ -56,10 +60,48 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
     return {
       location: "Talcahuano, Chile",
       timestamp: new Date().toISOString(),
-      tide: { current: 8.0, unit: "metros", minimum: 7.0 },
+      tide: { 
+        current: 8.0, 
+        unit: "metros", 
+        minimum: 7.0,
+        windows: generateTideWindows(), 
+      },
       wind: { speed: 10.0, direction: "N", unit: "nudos", maximum: 15 }
     };
   }
+};
+
+// Generate simulated tide windows for the next 24 hours
+const generateTideWindows = (): TideWindow[] => {
+  const windows: TideWindow[] = [];
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  
+  // Generate windows for the next 24 hours in 2-hour intervals
+  for (let i = 0; i < 12; i++) {
+    const startTime = new Date(now);
+    startTime.setHours(now.getHours() + i * 2);
+    
+    const endTime = new Date(startTime);
+    endTime.setHours(startTime.getHours() + 2);
+    
+    // Calculate tide level using a sinusoidal pattern
+    // High tides at around 6AM and 6PM, low tides at 12PM and 12AM
+    const hour = startTime.getHours();
+    const tideLevel = 7.0 + Math.sin((hour + 6) / 12 * Math.PI) * 1.5;
+    
+    // Consider tide safe if above 7.0 meters
+    const isSafe = tideLevel >= 7.0;
+    
+    windows.push({
+      start: startTime.toISOString(),
+      end: endTime.toISOString(),
+      level: parseFloat(tideLevel.toFixed(1)),
+      isSafe
+    });
+  }
+  
+  return windows;
 };
 
 // Check if weather conditions allow dock entry
@@ -67,6 +109,36 @@ const isWeatherSuitable = (weatherData: WeatherData): boolean => {
   // Tide must be above minimum (7m) and wind below maximum (15 knots)
   return weatherData.tide.current >= weatherData.tide.minimum && 
          weatherData.wind.speed <= weatherData.wind.maximum;
+};
+
+// Check if the operation time falls within a safe tide window
+const isWithinSafeTideWindow = (
+  startTime: string,
+  endTime: string,
+  weatherData: WeatherData
+): boolean => {
+  if (!weatherData.tide.windows || weatherData.tide.windows.length === 0) {
+    // If no window data, fall back to current tide level check
+    return weatherData.tide.current >= weatherData.tide.minimum;
+  }
+  
+  const operationStart = new Date(startTime).getTime();
+  const operationEnd = new Date(endTime).getTime();
+  
+  // Find all tide windows that overlap with the operation time
+  const overlappingWindows = weatherData.tide.windows.filter(window => {
+    const windowStart = new Date(window.start).getTime();
+    const windowEnd = new Date(window.end).getTime();
+    
+    // Check if there's an overlap between operation time and tide window
+    return (
+      (operationStart <= windowEnd && operationEnd >= windowStart)
+    );
+  });
+  
+  // Operation is safe if all overlapping windows have safe tide levels
+  return overlappingWindows.length > 0 && 
+         overlappingWindows.every(window => window.isSafe);
 };
 
 // Check if dock space allows for the ship (considering other ships already in dock)
@@ -156,6 +228,12 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       for (const ship of ships) {
         // Skip if the ship is already allocated in any existing allocations
         if (allocatedShipIds.has(ship.id) || isShipAlreadyAllocated(ship, ship.arrivalTime, ship.departureTime, existingAllocations)) {
+          continue;
+        }
+        
+        // Check if the operation is within a safe tide window
+        if (!isWithinSafeTideWindow(ship.arrivalTime, ship.departureTime, weatherData)) {
+          console.log(`Ship ${ship.name} operation outside safe tide window`);
           continue;
         }
         

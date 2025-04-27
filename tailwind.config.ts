@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -53,10 +54,17 @@ export default {
 					foreground: 'hsl(var(--card-foreground))'
 				},
 				marine: {
-					DEFAULT: '#0A192F',
+					DEFAULT: '#0A192F', // Deep navy
 					light: '#172A45',
 					accent: '#64FFDA',
 					water: '#EBF8FF',
+				},
+				tide: {
+					safe: '#06B6D4', // Cyan-500
+					warning: '#F59E0B', // Amber-500  
+					danger: '#EF4444', // Red-500
+					low: '#93C5FD', // Blue-300
+					high: '#1D4ED8', // Blue-700
 				}
 			},
 			borderRadius: {
@@ -84,15 +92,22 @@ export default {
 				'ship-sail': {
 					'0%': { transform: 'translateX(-100%)' },
 					'100%': { transform: 'translateX(0)' }
+				},
+				'wave': {
+					'0%': { transform: 'translateX(0)' },
+					'50%': { transform: 'translateX(-25%)' },
+					'100%': { transform: 'translateX(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'ship-sail': 'ship-sail 1.5s ease-out'
+				'ship-sail': 'ship-sail 1.5s ease-out',
+				'wave': 'wave 10s ease-in-out infinite'
 			},
 			backgroundImage: {
 				'blue-stripes': 'linear-gradient(45deg, rgba(14, 165, 233, 0.05) 25%, transparent 25%, transparent 50%, rgba(14, 165, 233, 0.05) 50%, rgba(14, 165, 233, 0.05) 75%, transparent 75%, transparent)',
+				'tide-gradient': 'linear-gradient(to top, #06B6D4 0%, #0EA5E9 50%, #93C5FD 100%)',
 			}
 		}
 	},

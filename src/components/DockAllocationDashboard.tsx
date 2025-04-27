@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -6,11 +7,12 @@ import DockCard from "@/components/DockCard";
 import ShipsTable from "@/components/ShipsTable";
 import ShipForm from "@/components/ShipForm";
 import TimelineView from "@/components/TimelineView";
+import TideWindowDisplay from "@/components/TideWindowDisplay";
 import DockManagementTab from "@/components/DockManagementTab";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -135,7 +137,7 @@ const DockAllocationDashboard = () => {
   return (
     <div className="container py-8 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Sistema de Asignación de Diques</h1>
+        <h1 className="text-3xl font-bold text-marine-DEFAULT">Sistema de Asignación de Diques</h1>
         <p className="text-muted-foreground">Optimiza la asignación de atraques con nuestro sistema basado en IA</p>
       </div>
       
@@ -215,56 +217,107 @@ const DockAllocationDashboard = () => {
             </Card>
           </div>
           
-          {weatherData && (
-            <Card className="border-blue-200 bg-blue-50/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <CloudIcon className="h-5 w-5" />
-                  Condiciones Climáticas - {weatherData.location}
-                </CardTitle>
-                <CardDescription>
-                  Actualizado: {new Date(weatherData.timestamp).toLocaleString('es-ES')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Nivel de Marea:</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              {weatherData && (
+                <Card className="border-marine-DEFAULT border-opacity-20 bg-marine-DEFAULT bg-opacity-5 mb-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
+                      <CloudIcon className="h-5 w-5" />
+                      Condiciones Climáticas - {weatherData.location}
+                    </CardTitle>
+                    <CardDescription>
+                      Actualizado: {new Date(weatherData.timestamp).toLocaleString('es-ES')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Nivel de Marea:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg font-bold ${weatherData.tide.current >= 7 ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                            {weatherData.tide.current.toFixed(1)} {weatherData.tide.unit}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            (Mínimo: {weatherData.tide.minimum} {weatherData.tide.unit})
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Velocidad del Viento:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg font-bold ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                            {weatherData.wind.speed.toFixed(1)} {weatherData.wind.unit}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            (Máximo: {weatherData.wind.maximum} {weatherData.wind.unit})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              <TimelineView 
+                allocations={allocations} 
+                ships={ships} 
+                docks={docks}
+                weatherData={weatherData || undefined}
+              />
+            </div>
+            
+            <div>
+              {weatherData?.tide.windows && (
+                <TideWindowDisplay 
+                  tideWindows={weatherData.tide.windows} 
+                  className="mb-4"
+                />
+              )}
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-marine-DEFAULT">
                     <div className="flex items-center gap-2">
-                      <span className={`text-lg font-bold ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
-                        {weatherData.tide.current.toFixed(1)} {weatherData.tide.unit}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        (Mínimo: {weatherData.tide.minimum} {weatherData.tide.unit})
-                      </span>
+                      <WavesIcon className="h-5 w-5" />
+                      <span>Restricciones de Marea</span>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm">
+                      El sistema considera restricciones de ventanas de marea para la asignación segura de buques a los diques.
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Nivel mínimo de marea:</span>
+                        <span className="font-medium">7.0 metros</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Ventanas de operación segura:</span>
+                        <span className="font-medium">
+                          {weatherData?.tide.windows?.filter(w => w.isSafe).length || 0} ventanas
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 bg-blue-50 p-3 rounded-md border border-blue-100">
+                      <p className="text-xs text-blue-800">
+                        La asignación de buques solo se realiza durante ventanas con niveles adecuados de marea.
+                      </p>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Velocidad del Viento:</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-lg font-bold ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
-                        {weatherData.wind.speed.toFixed(1)} {weatherData.wind.unit}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        (Máximo: {weatherData.wind.maximum} {weatherData.wind.unit})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          <TimelineView 
-            allocations={allocations} 
-            ships={ships} 
-            docks={docks} 
-          />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="col-span-3">
-              <h2 className="text-xl font-semibold mb-4">Estado Actual de los Diques</h2>
+              <h2 className="text-xl font-semibold mb-4 text-marine-DEFAULT">Estado Actual de los Diques</h2>
             </div>
             {docks.map(dock => (
               <DockCard 
@@ -279,7 +332,7 @@ const DockAllocationDashboard = () => {
         <TabsContent value="allocation">
           <Card>
             <CardHeader>
-              <CardTitle>Herramienta de Asignación de Atraques</CardTitle>
+              <CardTitle className="text-marine-DEFAULT">Herramienta de Asignación de Atraques</CardTitle>
               <CardDescription>
                 Ejecuta el modelo de asignación de atraques basado en IA para optimizar las asignaciones
               </CardDescription>
@@ -319,12 +372,56 @@ const DockAllocationDashboard = () => {
                   )}
                 />
               </div>
+              
+              {weatherData?.tide.windows && (
+                <div className="border rounded-md p-4 bg-blue-50">
+                  <h3 className="font-medium mb-2 text-marine-DEFAULT flex items-center gap-2">
+                    <WavesIcon className="h-4 w-4" />
+                    Ventanas de Marea para Asignación
+                  </h3>
+                  
+                  <div className="mb-3 text-sm">
+                    <p>El sistema considerará las siguientes ventanas de marea para asignar buques:</p>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    {weatherData.tide.windows
+                      .filter(window => window.isSafe)
+                      .map((window, i) => (
+                        <div 
+                          key={i}
+                          className="p-2 border bg-white rounded flex justify-between items-center text-sm"
+                        >
+                          <span>
+                            {new Date(window.start).toLocaleDateString('es-ES')}
+                            {' '}
+                            {new Date(window.start).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})} 
+                            - 
+                            {new Date(window.end).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                          <span className="font-medium text-tide-safe">
+                            {window.level.toFixed(1)}m
+                          </span>
+                        </div>
+                      ))
+                    }
+                    
+                    {weatherData.tide.windows.filter(window => window.isSafe).length === 0 && (
+                      <p className="text-center text-muted-foreground p-4">No hay ventanas seguras disponibles</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-between border-t pt-6">
               <Button variant="outline" onClick={() => setActiveTab("ships")}>
                 Agregar Más Buques
               </Button>
-              <Button onClick={handleRunAllocationModel} disabled={isLoading}>
+              <Button 
+                onClick={handleRunAllocationModel} 
+                disabled={isLoading}
+                className="bg-marine-DEFAULT hover:bg-marine-light text-white"
+              >
                 {isLoading ? "Procesando..." : "Ejecutar Modelo de Asignación"}
               </Button>
             </CardFooter>
@@ -334,7 +431,7 @@ const DockAllocationDashboard = () => {
         <TabsContent value="ships" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Gestión de Buques</CardTitle>
+              <CardTitle className="text-marine-DEFAULT">Gestión de Buques</CardTitle>
               <CardDescription>Agregar y ver buques en el sistema</CardDescription>
             </CardHeader>
             <CardContent>
@@ -352,7 +449,7 @@ const DockAllocationDashboard = () => {
         <TabsContent value="weather">
           <Card>
             <CardHeader>
-              <CardTitle>Condiciones Climáticas - Talcahuano, Chile</CardTitle>
+              <CardTitle className="text-marine-DEFAULT">Condiciones Climáticas - Talcahuano, Chile</CardTitle>
               <CardDescription>
                 Información en tiempo real de marea y viento
               </CardDescription>
@@ -361,7 +458,7 @@ const DockAllocationDashboard = () => {
               {weatherData ? (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Card>
+                    <Card className="border-marine-DEFAULT/20">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Información de Marea</CardTitle>
                         <CardDescription>
@@ -373,7 +470,7 @@ const DockAllocationDashboard = () => {
                           <div className="flex flex-col">
                             <span className="text-muted-foreground text-sm">Nivel actual:</span>
                             <div className="flex items-baseline gap-2">
-                              <span className={`text-3xl font-bold ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className={`text-3xl font-bold ${weatherData.tide.current >= 7 ? 'text-tide-safe' : 'text-tide-danger'}`}>
                                 {weatherData.tide.current.toFixed(1)}
                               </span>
                               <span>{weatherData.tide.unit}</span>
@@ -387,7 +484,7 @@ const DockAllocationDashboard = () => {
                           
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Estado:</span>
-                            <span className={`font-medium ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className={`font-medium ${weatherData.tide.current >= 7 ? 'text-tide-safe' : 'text-tide-danger'}`}>
                               {weatherData.tide.current >= 7 ? 'Apto para operación' : 'No apto para operación'}
                             </span>
                           </div>
@@ -395,7 +492,7 @@ const DockAllocationDashboard = () => {
                       </CardContent>
                     </Card>
                     
-                    <Card>
+                    <Card className="border-marine-DEFAULT/20">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Información de Viento</CardTitle>
                         <CardDescription>
@@ -435,25 +532,33 @@ const DockAllocationDashboard = () => {
                     </Card>
                   </div>
                   
-                  <Button onClick={async () => {
-                    try {
-                      setIsLoading(true);
-                      const newWeatherData = await fetchWeatherData();
-                      setWeatherData(newWeatherData);
-                      toast({
-                        title: "Datos Actualizados",
-                        description: "Información climática actualizada correctamente"
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "Error",
-                        description: "No se pudo actualizar la información climática",
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }} disabled={isLoading}>
+                  {weatherData?.tide.windows && (
+                    <TideWindowDisplay tideWindows={weatherData.tide.windows} />
+                  )}
+                  
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        setIsLoading(true);
+                        const newWeatherData = await fetchWeatherData();
+                        setWeatherData(newWeatherData);
+                        toast({
+                          title: "Datos Actualizados",
+                          description: "Información climática actualizada correctamente"
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Error",
+                          description: "No se pudo actualizar la información climática",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }} 
+                    disabled={isLoading}
+                    className="bg-marine-DEFAULT hover:bg-marine-light text-white"
+                  >
                     {isLoading ? "Actualizando..." : "Actualizar Datos Climáticos"}
                   </Button>
                 </div>

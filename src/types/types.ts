@@ -48,6 +48,8 @@ export interface WeatherData {
     current: number;
     unit: string;
     minimum: number;
+    // Tide window forecasting
+    windows?: TideWindow[];
   };
   wind: {
     speed: number;
@@ -55,6 +57,14 @@ export interface WeatherData {
     unit: string;
     maximum: number;
   };
+}
+
+// New tide window interface for safe operation periods
+export interface TideWindow {
+  start: string; // ISO timestamp
+  end: string;   // ISO timestamp
+  level: number; // Tide level in meters
+  isSafe: boolean; // Whether the tide level is safe for operations
 }
 
 // Mock data for Python model simulation
