@@ -60,7 +60,7 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip }) => {
                 <TableCell className="text-right">
                   {onSelectShip && (
                     <Button 
-                      variant="ghost" 
+                      variant="marine"
                       onClick={() => onSelectShip(ship.id)}
                       size="sm"
                     >

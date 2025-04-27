@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -403,7 +404,9 @@ const DockAllocationDashboard = () => {
               <Button 
                 onClick={handleRunAllocationModel} 
                 disabled={isLoading}
-                className="bg-marine-DEFAULT hover:bg-marine-light text-white"
+                variant="marine"
+                size="xl"
+                className="transition-all font-bold transform hover:scale-105"
               >
                 {isLoading ? "Procesando..." : "Ejecutar Modelo de Asignación"}
               </Button>
