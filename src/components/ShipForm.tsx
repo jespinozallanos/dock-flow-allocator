@@ -62,7 +62,13 @@ const ShipForm: React.FC<ShipFormProps> = ({ onShipAdded }) => {
     }
 
     try {
-      const newShip = await addShip(formData);
+      // Create a copy of the form data to ensure we're sending exactly what the user entered
+      const shipData = { ...formData };
+      
+      // Send the exact form data without any modifications
+      const newShip = await addShip(shipData);
+      
+      // Pass the new ship to the parent component
       onShipAdded(newShip);
       
       // Reset form

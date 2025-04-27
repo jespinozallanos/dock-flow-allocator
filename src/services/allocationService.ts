@@ -316,8 +316,16 @@ export const getAllocations = (): Promise<Allocation[]> => {
 
 // Add a new ship
 export const addShip = (ship: Omit<Ship, 'id'>): Promise<Ship> => {
-  const newShip = { ...ship, id: Math.random().toString(36).substring(2, 9) };
+  // Create a new ship with ID but preserve all other properties exactly as provided
+  const newShip = { 
+    ...ship, 
+    id: Math.random().toString(36).substring(2, 9)
+  };
+  
+  // Add the new ship to the mockShips array
   mockShips.push(newShip);
+  
+  // Return a promise that resolves to the new ship
   return Promise.resolve(newShip);
 };
 
