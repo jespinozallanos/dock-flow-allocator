@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -127,7 +126,6 @@ const DockAllocationDashboard = () => {
     return ships.find(s => s.id === shipId);
   };
   
-  // Get occupied ships from comma-separated occupiedBy string
   const getShipsFromOccupiedString = (occupiedBy: string | undefined) => {
     if (!occupiedBy) return [];
     const shipIds = occupiedBy.split(',');
@@ -165,21 +163,6 @@ const DockAllocationDashboard = () => {
               Clima
             </TabsTrigger>
           </TabsList>
-          
-          {weatherData && (
-            <div className="hidden md:flex items-center text-sm gap-4">
-              <div className={`flex items-center gap-1 ${weatherData.tide.current >= 3 ? 'text-green-600' : 'text-red-600'}`}>
-                <span>Marea:</span>
-                <span className="font-medium">{weatherData.tide.current.toFixed(1)}m</span>
-                <span className="text-xs">(Mín: 3m)</span>
-              </div>
-              <div className={`flex items-center gap-1 ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                <span>Viento:</span>
-                <span className="font-medium">{weatherData.wind.speed.toFixed(1)} nudos</span>
-                <span className="text-xs">(Máx: 8 nudos)</span>
-              </div>
-            </div>
-          )}
         </div>
         
         <TabsContent value="dashboard" className="space-y-8">
@@ -239,7 +222,7 @@ const DockAllocationDashboard = () => {
                             {weatherData.tide.current.toFixed(1)} {weatherData.tide.unit}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            (Mínimo: {weatherData.tide.minimum} {weatherData.tide.unit})
+                            (Mín: {weatherData.tide.minimum} {weatherData.tide.unit})
                           </span>
                         </div>
                       </div>
@@ -251,7 +234,7 @@ const DockAllocationDashboard = () => {
                             {weatherData.wind.speed.toFixed(1)} {weatherData.wind.unit}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            (Máximo: {weatherData.wind.maximum} {weatherData.wind.unit})
+                            (Máx: {weatherData.wind.maximum} {weatherData.wind.unit})
                           </span>
                         </div>
                       </div>
