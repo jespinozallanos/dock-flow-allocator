@@ -149,6 +149,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     });
   };
 
+  const handleTodayClick = () => {
+    setCurrentDate(new Date());
+    setViewMode("week");
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>

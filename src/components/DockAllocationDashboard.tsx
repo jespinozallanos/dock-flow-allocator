@@ -321,8 +321,8 @@ const DockAllocationDashboard = () => {
             </Card>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="xl:col-span-3 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-marine-DEFAULT">Cronograma de Asignación</CardTitle>
@@ -361,9 +361,19 @@ const DockAllocationDashboard = () => {
                   </CardFooter>
                 </Card>
               </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {docks.map(dock => (
+                  <DockCard 
+                    key={dock.id} 
+                    dock={dock}
+                    ships={getShipsFromOccupiedString(dock.occupiedBy)}
+                  />
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-4">
               {weatherData && (
                 <Card className="border-marine-DEFAULT border-opacity-20 bg-marine-DEFAULT bg-opacity-5">
                   <CardHeader className="pb-2">
@@ -411,16 +421,6 @@ const DockAllocationDashboard = () => {
                   className="mb-4"
                 />
               )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {docks.map(dock => (
-                  <DockCard 
-                    key={dock.id} 
-                    dock={dock}
-                    ships={getShipsFromOccupiedString(dock.occupiedBy)}
-                  />
-                ))}
-              </div>
             </div>
           </div>
         </TabsContent>
