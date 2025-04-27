@@ -14,6 +14,7 @@ import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatu
 import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Slider } from "@/components/ui/slider";
 
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -26,6 +27,35 @@ const DockAllocationDashboard = () => {
   const [weatherWarning, setWeatherWarning] = useState(false);
   
   const { toast } = useToast();
+
+  const [windSpeedLimit, setWindSpeedLimit] = useState(8.0);
+  const [tideLevelLimit, setTideLevelLimit] = useState(3.0);
+
+  const handleWindSpeedChange = (value: number[]) => {
+    setWindSpeedLimit(value[0]);
+    if (weatherData) {
+      setWeatherData({
+        ...weatherData,
+        wind: {
+          ...weatherData.wind,
+          maximum: value[0]
+        }
+      });
+    }
+  };
+
+  const handleTideLevelChange = (value: number[]) => {
+    setTideLevelLimit(value[0]);
+    if (weatherData) {
+      setWeatherData({
+        ...weatherData,
+        tide: {
+          ...weatherData.tide,
+          minimum: value[0]
+        }
+      });
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -506,31 +536,42 @@ const DockAllocationDashboard = () => {
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Información de Marea</CardTitle>
                         <CardDescription>
-                          Entrada de buques permitida con marea ≥ 3m
+                          Ajuste el nivel mínimo de marea permitido
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          <div className="flex flex-col">
-                            <span className="text-muted-foreground text-sm">Nivel actual:</span>
-                            <div className="flex items-baseline gap-2">
-                              <span className={`text-3xl font-bold ${weatherData.tide.current >= 3 ? 'text-tide-safe' : 'text-tide-danger'}`}>
-                                {weatherData.tide.current.toFixed(1)}
-                              </span>
-                              <span>{weatherData.tide.unit}</span>
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <div className="flex flex-col">
+                              <span className="text-muted-foreground text-sm">Nivel actual:</span>
+                              <div className="flex items-baseline gap-2">
+                                <span className={`text-3xl font-bold ${weatherData.tide.current >= tideLevelLimit ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                                  {weatherData.tide.current.toFixed(1)}
+                                </span>
+                                <span>{weatherData.tide.unit}</span>
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Mínimo requerido:</span>
-                            <span className="font-medium">{weatherData.tide.minimum} {weatherData.tide.unit}</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Estado:</span>
-                            <span className={`font-medium ${weatherData.tide.current >= 3 ? 'text-tide-safe' : 'text-tide-danger'}`}>
-                              {weatherData.tide.current >= 3 ? 'Apto para operación' : 'No apto para operación'}
-                            </span>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <label>Nivel mínimo requerido</label>
+                                <span className="font-medium">{tideLevelLimit.toFixed(1)} {weatherData.tide.unit}</span>
+                              </div>
+                              <Slider
+                                value={[tideLevelLimit]}
+                                onValueChange={handleTideLevelChange}
+                                min={2.0}
+                                max={5.0}
+                                step={0.1}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Estado:</span>
+                              <span className={`font-medium ${weatherData.tide.current >= tideLevelLimit ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                                {weatherData.tide.current >= tideLevelLimit ? 'Apto para operación' : 'No apto para operación'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -540,36 +581,42 @@ const DockAllocationDashboard = () => {
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Información de Viento</CardTitle>
                         <CardDescription>
-                          Entrada de buques permitida con viento ≤ 8 nudos
+                          Ajuste la velocidad máxima de viento permitida
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          <div className="flex flex-col">
-                            <span className="text-muted-foreground text-sm">Velocidad actual:</span>
-                            <div className="flex items-baseline gap-2">
-                              <span className={`text-3xl font-bold ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                                {weatherData.wind.speed.toFixed(1)}
-                              </span>
-                              <span>{weatherData.wind.unit}</span>
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <div className="flex flex-col">
+                              <span className="text-muted-foreground text-sm">Velocidad actual:</span>
+                              <div className="flex items-baseline gap-2">
+                                <span className={`text-3xl font-bold ${weatherData.wind.speed <= windSpeedLimit ? 'text-green-600' : 'text-red-600'}`}>
+                                  {weatherData.wind.speed.toFixed(1)}
+                                </span>
+                                <span>{weatherData.wind.unit}</span>
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Máximo permitido:</span>
-                            <span className="font-medium">{weatherData.wind.maximum} {weatherData.wind.unit}</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Dirección:</span>
-                            <span className="font-medium">{weatherData.wind.direction}</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Estado:</span>
-                            <span className={`font-medium ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                              {weatherData.wind.speed <= 8 ? 'Apto para operación' : 'No apto para operación'}
-                            </span>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <label>Velocidad máxima permitida</label>
+                                <span className="font-medium">{windSpeedLimit.toFixed(1)} {weatherData.wind.unit}</span>
+                              </div>
+                              <Slider
+                                value={[windSpeedLimit]}
+                                onValueChange={handleWindSpeedChange}
+                                min={5.0}
+                                max={15.0}
+                                step={0.1}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Estado:</span>
+                              <span className={`font-medium ${weatherData.wind.speed <= windSpeedLimit ? 'text-green-600' : 'text-red-600'}`}>
+                                {weatherData.wind.speed <= windSpeedLimit ? 'Apto para operación' : 'No apto para operación'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </CardContent>

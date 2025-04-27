@@ -47,7 +47,6 @@ export interface WeatherData {
     current: number;
     unit: string;
     minimum: number;
-    // Tide window forecasting
     windows?: TideWindow[];
   };
   wind: {
@@ -55,6 +54,10 @@ export interface WeatherData {
     direction: string;
     unit: string;
     maximum: number;
+  };
+  settings?: {
+    maxWindSpeed: number;
+    minTideLevel: number;
   };
 }
 
