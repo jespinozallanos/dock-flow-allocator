@@ -199,6 +199,46 @@ const isAllocationTimeValid = (
   return allocatedDuration >= requiredDuration;
 };
 
+// Get allocation failure reason for a ship
+const getShipAllocationFailureReason = (
+  ship: Ship,
+  docks: Dock[],
+  weatherData: WeatherData,
+  startTime: string,
+  endTime: string
+): string => {
+  // Check weather conditions first
+  if (weatherData.tide.current < weatherData.tide.minimum) {
+    return `Nivel de marea insuficiente (${weatherData.tide.current}m < ${weatherData.tide.minimum}m)`;
+  }
+  
+  if (weatherData.wind.speed > weatherData.wind.maximum) {
+    return `Velocidad del viento excesiva (${weatherData.wind.speed} > ${weatherData.wind.maximum} nudos)`;
+  }
+  
+  // Check if within safe tide window
+  if (!isWithinSafeTideWindow(startTime, endTime, weatherData)) {
+    return "No hay ventana de marea segura disponible para la operación";
+  }
+  
+  // Check available docks
+  const suitableDocks = docks.filter(dock => 
+    dock.length >= ship.length && 
+    dock.depth >= ship.draft && 
+    (!dock.specializations || dock.specializations.includes(ship.type))
+  );
+  
+  if (suitableDocks.length === 0) {
+    return `No hay diques disponibles que cumplan con los requisitos (largo: ${ship.length}m, calado: ${ship.draft}m, tipo: ${ship.type})`;
+  }
+  
+  if (suitableDocks.every(dock => dock.occupied)) {
+    return "Todos los diques compatibles están ocupados";
+  }
+  
+  return "No se pudo asignar por restricciones operativas";
+};
+
 // Mock Python model execution (in a real app, this would call a Python backend)
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
   // Get weather data
@@ -210,11 +250,20 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       const ships = [...params.ships];
       const docks = [...params.docks].filter(d => d.operationalStatus === 'operativo');
       const existingAllocations = [...params.existingAllocations];
+      const unassignedShips: Array<{ship: Ship, reason: string}> = [];
       
       // Weather status check
       const weatherSuitable = isWeatherSuitable(weatherData);
       
       if (!weatherSuitable) {
+        // Add all ships to unassigned with weather reason
+        ships.forEach(ship => {
+          unassignedShips.push({
+            ship,
+            reason: getShipAllocationFailureReason(ship, docks, weatherData, ship.arrivalTime, ship.departureTime)
+          });
+        });
+        
         resolve({
           allocations: [],
           metrics: {
@@ -223,7 +272,8 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
             conflicts: 0
           },
           weatherData,
-          weatherWarning: true
+          weatherWarning: true,
+          unassignedShips
         });
         return;
       }
@@ -243,7 +293,10 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
         
         // Check if the operation is within a safe tide window
         if (!isWithinSafeTideWindow(ship.arrivalTime, ship.departureTime, weatherData)) {
-          console.log(`Ship ${ship.name} operation outside safe tide window`);
+          unassignedShips.push({
+            ship,
+            reason: getShipAllocationFailureReason(ship, docks, weatherData, ship.arrivalTime, ship.departureTime)
+          });
           continue;
         }
 
@@ -253,7 +306,10 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
         
         // Verify allocation time is valid
         if (!isAllocationTimeValid(ship, proposedStartTime, proposedEndTime)) {
-          console.log(`Ship ${ship.name} cannot be allocated for less than scheduled time`);
+          unassignedShips.push({
+            ship,
+            reason: "Tiempo de asignación inválido"
+          });
           continue;
         }
         
@@ -264,6 +320,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
           (!dock.specializations || dock.specializations.includes(ship.type))
         );
         
+        let allocated = false;
         for (const dock of suitableDocks) {
           if (hasAvailableSpace(dock, ship, docksAllocation[dock.id])) {
             const newAllocation = {
@@ -279,8 +336,16 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
             allocations.push(newAllocation);
             docksAllocation[dock.id].push({ ship, allocation: newAllocation });
             allocatedShipIds.add(ship.id);
+            allocated = true;
             break;
           }
+        }
+        
+        if (!allocated) {
+          unassignedShips.push({
+            ship,
+            reason: getShipAllocationFailureReason(ship, docks, weatherData, ship.arrivalTime, ship.departureTime)
+          });
         }
       }
       
@@ -293,7 +358,8 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       resolve({
         allocations,
         metrics,
-        weatherData
+        weatherData,
+        unassignedShips
       });
     }, 1500);
   });

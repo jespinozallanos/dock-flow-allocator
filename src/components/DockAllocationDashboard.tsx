@@ -94,12 +94,54 @@ const DockAllocationDashboard = () => {
         const updatedDocks = await updateDockStatus([...allocations, ...result.allocations]);
         setDocks(updatedDocks);
         
-        toast({
-          title: "Asignación Completada",
-          description: `${result.allocations.length} buques asignados con éxito`
-        });
+        if (result.unassignedShips && result.unassignedShips.length > 0) {
+          toast({
+            title: "Asignación Completada Parcialmente",
+            description: `${result.allocations.length} buques asignados. ${result.unassignedShips.length} buques no pudieron ser asignados.`,
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Asignación Completada",
+            description: `${result.allocations.length} buques asignados con éxito`,
+            variant: "default"
+          });
+        }
         
-        setActiveTab("dashboard");
+        if (result.unassignedShips && result.unassignedShips.length > 0) {
+          setActiveTab("allocation");
+        } else {
+          setActiveTab("dashboard");
+        }
+      }
+      
+      if (result.unassignedShips && result.unassignedShips.length > 0) {
+        const unassignedContent = (
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg text-red-600">Buques No Asignados:</h3>
+            {result.unassignedShips.map(({ ship, reason }) => (
+              <div key={ship.id} className="p-4 border rounded-md bg-red-50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{ship.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Llegada: {new Date(ship.arrivalTime).toLocaleString('es-ES')}
+                    </p>
+                  </div>
+                  <div className="text-sm text-red-600">
+                    Razón: {reason}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+        
+        toast({
+          title: "Detalles de Buques No Asignados",
+          description: unassignedContent,
+          duration: 10000,
+        });
       }
     } catch (error) {
       console.error("Error running allocation model:", error);
