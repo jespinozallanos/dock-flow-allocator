@@ -265,6 +265,19 @@ const DockAllocationDashboard = () => {
                 docks={docks}
                 weatherData={weatherData || undefined}
               />
+
+              <div className="mt-8">
+                <h2 className="text-xl font-semibold mb-4 text-marine-DEFAULT">Estado Actual de los Diques</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {docks.map(dock => (
+                    <DockCard 
+                      key={dock.id} 
+                      dock={dock}
+                      ships={getShipsFromOccupiedString(dock.occupiedBy)}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             
             <div>
@@ -312,19 +325,6 @@ const DockAllocationDashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="col-span-3">
-              <h2 className="text-xl font-semibold mb-4 text-marine-DEFAULT">Estado Actual de los Diques</h2>
-            </div>
-            {docks.map(dock => (
-              <DockCard 
-                key={dock.id} 
-                dock={dock}
-                ships={getShipsFromOccupiedString(dock.occupiedBy)}
-              />
-            ))}
           </div>
         </TabsContent>
         
