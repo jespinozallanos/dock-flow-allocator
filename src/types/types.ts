@@ -1,4 +1,3 @@
-
 // Ships and Dock types
 export type ShipType = 'container' | 'bulk' | 'tanker' | 'passenger';
 export type OperationalStatus = 'operativo' | 'mantenimiento' | 'fuera-de-servicio';
@@ -84,6 +83,7 @@ export interface PythonModelResult {
   };
   weatherData?: WeatherData;
   weatherWarning?: boolean;
+  unassignedShips?: UnassignedShip[]; // Added this property to fix the type error
 }
 
 export type TabOption = 'dashboard' | 'allocation' | 'ships' | 'docks' | 'history';
