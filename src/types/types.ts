@@ -1,3 +1,4 @@
+
 // Ships and Dock types
 export type ShipType = 'container' | 'bulk' | 'tanker' | 'passenger';
 export type OperationalStatus = 'operativo' | 'mantenimiento' | 'fuera-de-servicio';

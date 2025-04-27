@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -39,6 +40,11 @@ const DockAllocationDashboard = () => {
         wind: {
           ...weatherData.wind,
           maximum: value[0]
+        },
+        settings: {
+          ...weatherData.settings,
+          maxWindSpeed: value[0],
+          minTideLevel: tideLevelLimit
         }
       });
     }
@@ -52,6 +58,11 @@ const DockAllocationDashboard = () => {
         tide: {
           ...weatherData.tide,
           minimum: value[0]
+        },
+        settings: {
+          ...weatherData.settings,
+          minTideLevel: value[0],
+          maxWindSpeed: windSpeedLimit
         }
       });
     }
@@ -71,7 +82,19 @@ const DockAllocationDashboard = () => {
         setShips(shipsData);
         setDocks(docksData);
         setAllocations(allocationsData);
-        setWeatherData(weather);
+        
+        // Initialize weather data and update limits based on fetched data
+        const initialWeatherData = {
+          ...weather,
+          settings: {
+            maxWindSpeed: weather.wind.maximum || 8.0,
+            minTideLevel: weather.tide.minimum || 3.0
+          }
+        };
+        
+        setWeatherData(initialWeatherData);
+        setWindSpeedLimit(initialWeatherData.settings?.maxWindSpeed || 8.0);
+        setTideLevelLimit(initialWeatherData.settings?.minTideLevel || 3.0);
         
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
@@ -106,6 +129,14 @@ const DockAllocationDashboard = () => {
         existingAllocations: allocations,
         optimizationCriteria
       };
+      
+      // Ensure we've updated the model with current weather settings
+      if (weatherData) {
+        weatherData.settings = {
+          maxWindSpeed: windSpeedLimit,
+          minTideLevel: tideLevelLimit
+        };
+      }
       
       const result = await runAllocationModel(modelParams);
       

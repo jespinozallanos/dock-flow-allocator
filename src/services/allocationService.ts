@@ -41,6 +41,10 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
         direction: getWindDirection(data.current.wind_direction_10m),
         unit: "nudos",
         maximum: 8.0,
+      },
+      settings: {
+        maxWindSpeed: 8.0,
+        minTideLevel: 3.0
       }
     };
   } catch (error) {
@@ -55,7 +59,11 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
         minimum: 3.0,
         windows: generateTideWindows(3.0), 
       },
-      wind: { speed: 5.0, direction: "N", unit: "nudos", maximum: 8.0 }
+      wind: { speed: 5.0, direction: "N", unit: "nudos", maximum: 8.0 },
+      settings: {
+        maxWindSpeed: 8.0,
+        minTideLevel: 3.0
+      }
     };
   }
 };
@@ -107,9 +115,13 @@ const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
 
 // Check if weather conditions allow dock entry
 const isWeatherSuitable = (weatherData: WeatherData): boolean => {
-  // Tide must be above minimum (3m) and wind below maximum (8 knots)
-  return weatherData.tide.current >= weatherData.tide.minimum && 
-         weatherData.wind.speed <= weatherData.wind.maximum;
+  // Use settings if available, otherwise fall back to default values
+  const maxWindSpeed = weatherData.settings?.maxWindSpeed || weatherData.wind.maximum;
+  const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
+  
+  // Tide must be above minimum and wind below maximum
+  return weatherData.tide.current >= minTideLevel && 
+         weatherData.wind.speed <= maxWindSpeed;
 };
 
 // Check if the operation time falls within a safe tide window
@@ -205,12 +217,15 @@ const getShipAllocationFailureReason = (
   endTime: string
 ): string => {
   // Check weather conditions first
-  if (weatherData.tide.current < weatherData.tide.minimum) {
-    return `Nivel de marea insuficiente (${weatherData.tide.current}m < ${weatherData.tide.minimum}m)`;
+  const maxWindSpeed = weatherData.settings?.maxWindSpeed || weatherData.wind.maximum;
+  const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
+  
+  if (weatherData.tide.current < minTideLevel) {
+    return `Nivel de marea insuficiente (${weatherData.tide.current}m < ${minTideLevel}m)`;
   }
   
-  if (weatherData.wind.speed > weatherData.wind.maximum) {
-    return `Velocidad del viento excesiva (${weatherData.wind.speed} > ${weatherData.wind.maximum} nudos)`;
+  if (weatherData.wind.speed > maxWindSpeed) {
+    return `Velocidad del viento excesiva (${weatherData.wind.speed} > ${maxWindSpeed} nudos)`;
   }
   
   // Check if within safe tide window
@@ -249,8 +264,12 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       const existingAllocations = [...params.existingAllocations];
       const unassignedShips: Array<{ship: Ship, reason: string}> = [];
       
-      // Weather status check
-      const weatherSuitable = isWeatherSuitable(weatherData);
+      // Weather status check - use settings if available
+      const maxWindSpeed = weatherData.settings?.maxWindSpeed || weatherData.wind.maximum;
+      const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
+      
+      const weatherSuitable = weatherData.tide.current >= minTideLevel && 
+                             weatherData.wind.speed <= maxWindSpeed;
       
       if (!weatherSuitable) {
         // Add all ships to unassigned with weather reason
