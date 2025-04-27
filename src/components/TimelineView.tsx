@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Allocation, Ship, Dock, TimelineViewMode, WeatherData } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronLeftIcon, ChevronRightIcon, CalendarDaysIcon, CalendarIcon, WavesIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, CalendarDaysIcon, CalendarIcon, WavesIcon, CalendarClockIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -151,6 +151,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
 
   const operationalDocks = docks.filter(dock => dock.operationalStatus === 'operativo');
 
+  const handleTodayClick = () => {
+    setCurrentDate(new Date());
+    setViewMode("week");
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -208,6 +213,15 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                 >
                   <CalendarDaysIcon className="h-4 w-4" />
                   Mes
+                </Button>
+                <Button 
+                  variant="marine" 
+                  size="sm" 
+                  onClick={handleTodayClick}
+                  className="flex items-center gap-1"
+                >
+                  <CalendarClockIcon className="h-4 w-4" />
+                  Hoy
                 </Button>
               </div>
             </div>
