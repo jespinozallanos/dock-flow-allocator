@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,14 +70,16 @@ const ShipForm: React.FC<ShipFormProps> = ({ onShipAdded }) => {
       // Pass the new ship to the parent component
       onShipAdded(newShip);
       
-      // Reset form
+      // Only reset the fields that should be reset, keeping arrival and departure times
+      const { arrivalTime, departureTime } = formData;
+      
       setFormData({
         name: '',
         type: 'container',
         length: 250,
         draft: 10,
-        arrivalTime: '',
-        departureTime: '',
+        arrivalTime, // Preserve the arrival time
+        departureTime, // Preserve the departure time
         cargoType: '',
         priority: 2
       });
