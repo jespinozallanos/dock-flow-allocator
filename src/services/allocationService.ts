@@ -8,7 +8,7 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
     // Using OpenWeatherMap API for Talcahuano, Chile
     // Coordinates for Talcahuano: -36.7247, -73.1169
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=-36.7247&lon=-73.1169&appid=YOUR_API_KEY_HERE&units=metric`
+      `https://api.weatherapi.com/v1/forecast.json?key=d94f2a5a75a44bfb97830727231404&q=-36.7247,-73.1169&days=1&aqi=no&alerts=no`
     );
     
     if (!response.ok) {
@@ -17,41 +17,34 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
     
     const data = await response.json();
     
-    // Convert from OpenWeatherMap format to our WeatherData format
-    // Note: This is a simplified conversion as OpenWeatherMap doesn't provide tide data
-    // For tide data in real implementation, you would need a specialized marine weather API
+    // Convert from WeatherAPI format to our WeatherData format
     
-    // Wind speed conversion from m/s to knots (1 m/s = 1.94384 knots)
-    const windSpeed = data.wind.speed * 1.94384;
+    // Wind speed conversion from km/h to knots (1 km/h = 0.539957 knots)
+    const windSpeed = data.current.wind_kph * 0.539957;
     
-    // For tide simulation, we'll use a sinusoidal function based on the current hour
-    // This is just for simulation - in production, use a real tide API
+    // For tide simulation, we'll use a combination of weather data and time-based calculation
+    // This is still a simulation as specialized marine APIs for tide data are typically paid
     const hour = new Date().getHours();
-    const tideLevel = 7.0 + Math.sin(hour / 24 * 2 * Math.PI) * 1.2;
+    // Base tide level of 3.5 meters with a variation of 0.8 meters based on time
+    const tideLevel = 3.5 + Math.sin(hour / 24 * 2 * Math.PI) * 0.8;
     
     // Generate tide windows for the next 24 hours
-    const tideWindows = generateTideWindows();
+    const tideWindows = generateTideWindows(3.0); // Minimum tide level now 3 meters
     
     return {
-      location: "Talcahuano, Chile",
+      location: `${data.location.name}, ${data.location.country}`,
       timestamp: new Date().toISOString(),
       tide: {
         current: parseFloat(tideLevel.toFixed(1)),
         unit: "metros",
-        minimum: 7.0, // Minimum required tide for ship entry
+        minimum: 3.0, // Updated minimum required tide for ship entry to 3 meters
         windows: tideWindows,
       },
       wind: {
         speed: parseFloat(windSpeed.toFixed(1)),
-        direction: data.wind.deg > 337.5 || data.wind.deg <= 22.5 ? "N" :
-                  data.wind.deg > 22.5 && data.wind.deg <= 67.5 ? "NE" :
-                  data.wind.deg > 67.5 && data.wind.deg <= 112.5 ? "E" :
-                  data.wind.deg > 112.5 && data.wind.deg <= 157.5 ? "SE" :
-                  data.wind.deg > 157.5 && data.wind.deg <= 202.5 ? "S" :
-                  data.wind.deg > 202.5 && data.wind.deg <= 247.5 ? "SW" :
-                  data.wind.deg > 247.5 && data.wind.deg <= 292.5 ? "W" : "NW",
+        direction: getWindDirection(data.current.wind_degree),
         unit: "nudos",
-        maximum: 15, // Maximum allowed wind for ship entry
+        maximum: 8.0, // Updated maximum allowed wind for ship entry to 8 knots
       }
     };
   } catch (error) {
@@ -61,18 +54,30 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
       location: "Talcahuano, Chile",
       timestamp: new Date().toISOString(),
       tide: { 
-        current: 8.0, 
+        current: 3.5, 
         unit: "metros", 
-        minimum: 7.0,
-        windows: generateTideWindows(), 
+        minimum: 3.0, // Updated minimum required tide
+        windows: generateTideWindows(3.0), 
       },
-      wind: { speed: 10.0, direction: "N", unit: "nudos", maximum: 15 }
+      wind: { speed: 5.0, direction: "N", unit: "nudos", maximum: 8.0 } // Updated maximum allowed wind
     };
   }
 };
 
+// Helper function to get wind direction from degrees
+const getWindDirection = (degrees: number): string => {
+  if (degrees > 337.5 || degrees <= 22.5) return "N";
+  if (degrees > 22.5 && degrees <= 67.5) return "NE";
+  if (degrees > 67.5 && degrees <= 112.5) return "E";
+  if (degrees > 112.5 && degrees <= 157.5) return "SE";
+  if (degrees > 157.5 && degrees <= 202.5) return "S";
+  if (degrees > 202.5 && degrees <= 247.5) return "SW";
+  if (degrees > 247.5 && degrees <= 292.5) return "W";
+  return "NW";
+};
+
 // Generate simulated tide windows for the next 24 hours
-const generateTideWindows = (): TideWindow[] => {
+const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
   const windows: TideWindow[] = [];
   const now = new Date();
   now.setMinutes(0, 0, 0);
@@ -88,10 +93,10 @@ const generateTideWindows = (): TideWindow[] => {
     // Calculate tide level using a sinusoidal pattern
     // High tides at around 6AM and 6PM, low tides at 12PM and 12AM
     const hour = startTime.getHours();
-    const tideLevel = 7.0 + Math.sin((hour + 6) / 12 * Math.PI) * 1.5;
+    const tideLevel = 3.5 + Math.sin((hour + 6) / 12 * Math.PI) * 0.8;
     
-    // Consider tide safe if above 7.0 meters
-    const isSafe = tideLevel >= 7.0;
+    // Consider tide safe if above minimum tide level (now 3.0 meters)
+    const isSafe = tideLevel >= minimumTideLevel;
     
     windows.push({
       start: startTime.toISOString(),
@@ -106,7 +111,7 @@ const generateTideWindows = (): TideWindow[] => {
 
 // Check if weather conditions allow dock entry
 const isWeatherSuitable = (weatherData: WeatherData): boolean => {
-  // Tide must be above minimum (7m) and wind below maximum (15 knots)
+  // Tide must be above minimum (3m) and wind below maximum (8 knots)
   return weatherData.tide.current >= weatherData.tide.minimum && 
          weatherData.wind.speed <= weatherData.wind.maximum;
 };

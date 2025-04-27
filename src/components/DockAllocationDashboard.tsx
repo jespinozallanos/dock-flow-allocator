@@ -168,15 +168,15 @@ const DockAllocationDashboard = () => {
           
           {weatherData && (
             <div className="hidden md:flex items-center text-sm gap-4">
-              <div className={`flex items-center gap-1 ${weatherData.tide.current >= 7 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center gap-1 ${weatherData.tide.current >= 3 ? 'text-green-600' : 'text-red-600'}`}>
                 <span>Marea:</span>
                 <span className="font-medium">{weatherData.tide.current.toFixed(1)}m</span>
-                <span className="text-xs">(Mín: 7m)</span>
+                <span className="text-xs">(Mín: 3m)</span>
               </div>
-              <div className={`flex items-center gap-1 ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center gap-1 ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
                 <span>Viento:</span>
                 <span className="font-medium">{weatherData.wind.speed.toFixed(1)} nudos</span>
-                <span className="text-xs">(Máx: 15 nudos)</span>
+                <span className="text-xs">(Máx: 8 nudos)</span>
               </div>
             </div>
           )}
@@ -235,7 +235,7 @@ const DockAllocationDashboard = () => {
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Nivel de Marea:</span>
                         <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${weatherData.tide.current >= 7 ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                          <span className={`text-lg font-bold ${weatherData.tide.current >= 3 ? 'text-tide-safe' : 'text-tide-danger'}`}>
                             {weatherData.tide.current.toFixed(1)} {weatherData.tide.unit}
                           </span>
                           <span className="text-sm text-muted-foreground">
@@ -247,7 +247,7 @@ const DockAllocationDashboard = () => {
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Velocidad del Viento:</span>
                         <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`text-lg font-bold ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
                             {weatherData.wind.speed.toFixed(1)} {weatherData.wind.unit}
                           </span>
                           <span className="text-sm text-muted-foreground">
@@ -294,7 +294,7 @@ const DockAllocationDashboard = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
                         <span>Nivel mínimo de marea:</span>
-                        <span className="font-medium">7.0 metros</span>
+                        <span className="font-medium">3.0 metros</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span>Ventanas de operación segura:</span>
@@ -342,7 +342,7 @@ const DockAllocationDashboard = () => {
                 <Alert variant="destructive" className="mb-4">
                   <AlertTitle>Condiciones climáticas inadecuadas</AlertTitle>
                   <AlertDescription>
-                    Las condiciones actuales de marea ({weatherData?.tide.current.toFixed(1)} m) y/o viento ({weatherData?.wind.speed.toFixed(1)} nudos) no permiten la asignación de buques. Se requiere marea mínima de 7m y viento máximo de 15 nudos.
+                    Las condiciones actuales de marea ({weatherData?.tide.current.toFixed(1)} m) y/o viento ({weatherData?.wind.speed.toFixed(1)} nudos) no permiten la asignación de buques. Se requiere marea mínima de 3m y viento máximo de 8 nudos.
                   </AlertDescription>
                 </Alert>
               )}
@@ -462,7 +462,7 @@ const DockAllocationDashboard = () => {
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Información de Marea</CardTitle>
                         <CardDescription>
-                          Entrada de buques permitida con marea ≥ 7m
+                          Entrada de buques permitida con marea ≥ 3m
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -470,7 +470,7 @@ const DockAllocationDashboard = () => {
                           <div className="flex flex-col">
                             <span className="text-muted-foreground text-sm">Nivel actual:</span>
                             <div className="flex items-baseline gap-2">
-                              <span className={`text-3xl font-bold ${weatherData.tide.current >= 7 ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                              <span className={`text-3xl font-bold ${weatherData.tide.current >= 3 ? 'text-tide-safe' : 'text-tide-danger'}`}>
                                 {weatherData.tide.current.toFixed(1)}
                               </span>
                               <span>{weatherData.tide.unit}</span>
@@ -484,8 +484,8 @@ const DockAllocationDashboard = () => {
                           
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Estado:</span>
-                            <span className={`font-medium ${weatherData.tide.current >= 7 ? 'text-tide-safe' : 'text-tide-danger'}`}>
-                              {weatherData.tide.current >= 7 ? 'Apto para operación' : 'No apto para operación'}
+                            <span className={`font-medium ${weatherData.tide.current >= 3 ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                              {weatherData.tide.current >= 3 ? 'Apto para operación' : 'No apto para operación'}
                             </span>
                           </div>
                         </div>
@@ -496,7 +496,7 @@ const DockAllocationDashboard = () => {
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Información de Viento</CardTitle>
                         <CardDescription>
-                          Entrada de buques permitida con viento ≤ 15 nudos
+                          Entrada de buques permitida con viento ≤ 8 nudos
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -504,7 +504,7 @@ const DockAllocationDashboard = () => {
                           <div className="flex flex-col">
                             <span className="text-muted-foreground text-sm">Velocidad actual:</span>
                             <div className="flex items-baseline gap-2">
-                              <span className={`text-3xl font-bold ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className={`text-3xl font-bold ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
                                 {weatherData.wind.speed.toFixed(1)}
                               </span>
                               <span>{weatherData.wind.unit}</span>
@@ -523,8 +523,8 @@ const DockAllocationDashboard = () => {
                           
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Estado:</span>
-                            <span className={`font-medium ${weatherData.wind.speed <= 15 ? 'text-green-600' : 'text-red-600'}`}>
-                              {weatherData.wind.speed <= 15 ? 'Apto para operación' : 'No apto para operación'}
+                            <span className={`font-medium ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
+                              {weatherData.wind.speed <= 8 ? 'Apto para operación' : 'No apto para operación'}
                             </span>
                           </div>
                         </div>
