@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -16,6 +15,7 @@ import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, Do
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -83,7 +83,6 @@ const DockAllocationDashboard = () => {
         setDocks(docksData);
         setAllocations(allocationsData);
         
-        // Initialize weather data and update limits based on fetched data
         const initialWeatherData = {
           ...weather,
           settings: {
@@ -127,10 +126,13 @@ const DockAllocationDashboard = () => {
         ships,
         docks,
         existingAllocations: allocations,
-        optimizationCriteria
+        optimizationCriteria,
+        weatherSettings: {
+          maxWindSpeed: windSpeedLimit,
+          minTideLevel: tideLevelLimit
+        }
       };
       
-      // Ensure we've updated the model with current weather settings
       if (weatherData) {
         weatherData.settings = {
           maxWindSpeed: windSpeedLimit,

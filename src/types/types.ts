@@ -76,6 +76,10 @@ export interface PythonModelParams {
   docks: Dock[];
   existingAllocations: Allocation[];
   optimizationCriteria: 'waiting_time' | 'dock_utilization' | 'balanced';
+  weatherSettings?: {
+    maxWindSpeed: number;
+    minTideLevel: number;
+  };
 }
 
 // Define UnassignedShip type

@@ -1,3 +1,4 @@
+
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 
@@ -115,7 +116,7 @@ const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
 
 // Check if weather conditions allow dock entry
 const isWeatherSuitable = (weatherData: WeatherData): boolean => {
-  // Use settings if available, otherwise fall back to default values
+  // CRITICAL FIX: Always use settings from weatherData if available
   const maxWindSpeed = weatherData.settings?.maxWindSpeed || weatherData.wind.maximum;
   const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
   
@@ -130,9 +131,12 @@ const isWithinSafeTideWindow = (
   endTime: string,
   weatherData: WeatherData
 ): boolean => {
+  // CRITICAL FIX: Use the settings values from weatherData
+  const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
+  
   if (!weatherData.tide.windows || weatherData.tide.windows.length === 0) {
     // If no window data, fall back to current tide level check
-    return weatherData.tide.current >= weatherData.tide.minimum;
+    return weatherData.tide.current >= minTideLevel;
   }
   
   const operationStart = new Date(startTime).getTime();
@@ -148,10 +152,16 @@ const isWithinSafeTideWindow = (
       (operationStart <= windowEnd && operationEnd >= windowStart)
     );
   });
+
+  // Recalculate isSafe based on the current settings
+  const safeWindows = overlappingWindows.map(window => ({
+    ...window,
+    isSafe: window.level >= minTideLevel
+  }));
   
   // Operation is safe if all overlapping windows have safe tide levels
-  return overlappingWindows.length > 0 && 
-         overlappingWindows.every(window => window.isSafe);
+  return safeWindows.length > 0 && 
+         safeWindows.every(window => window.isSafe);
 };
 
 // Check if dock space allows for the ship (considering other ships already in dock)
@@ -216,7 +226,7 @@ const getShipAllocationFailureReason = (
   startTime: string,
   endTime: string
 ): string => {
-  // Check weather conditions first
+  // CRITICAL FIX: Always use the settings from weatherData
   const maxWindSpeed = weatherData.settings?.maxWindSpeed || weatherData.wind.maximum;
   const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
   
@@ -228,7 +238,7 @@ const getShipAllocationFailureReason = (
     return `Velocidad del viento excesiva (${weatherData.wind.speed} > ${maxWindSpeed} nudos)`;
   }
   
-  // Check if within safe tide window
+  // Check if within safe tide window using updated settings
   if (!isWithinSafeTideWindow(startTime, endTime, weatherData)) {
     return "No hay ventana de marea segura disponible para la operación";
   }
@@ -256,6 +266,14 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
   // Get weather data
   const weatherData = await fetchWeatherData();
   
+  // CRITICAL FIX: Ensure we properly set the weather data settings before running the model
+  if (params.weatherSettings) {
+    weatherData.settings = {
+      maxWindSpeed: params.weatherSettings.maxWindSpeed,
+      minTideLevel: params.weatherSettings.minTideLevel
+    };
+  }
+  
   return new Promise((resolve) => {
     setTimeout(() => {
       const allocations: Allocation[] = [];
@@ -264,10 +282,11 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       const existingAllocations = [...params.existingAllocations];
       const unassignedShips: Array<{ship: Ship, reason: string}> = [];
       
-      // Weather status check - use settings if available
+      // Weather status check - CRITICAL FIX: Always use the settings from weatherData
       const maxWindSpeed = weatherData.settings?.maxWindSpeed || weatherData.wind.maximum;
       const minTideLevel = weatherData.settings?.minTideLevel || weatherData.tide.minimum;
       
+      // Update the condition check to use the correct settings
       const weatherSuitable = weatherData.tide.current >= minTideLevel && 
                              weatherData.wind.speed <= maxWindSpeed;
       
@@ -307,7 +326,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
           continue;
         }
         
-        // Check if the operation is within a safe tide window
+        // Check if the operation is within a safe tide window, using the updated settings
         if (!isWithinSafeTideWindow(ship.arrivalTime, ship.departureTime, weatherData)) {
           unassignedShips.push({
             ship,
