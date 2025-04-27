@@ -346,8 +346,7 @@ const DockAllocationDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <ShipsTable 
-                      ships={ships} 
-                      onDeleteShip={handleDeleteShip}
+                      ships={ships}
                     />
                   </CardContent>
                   <CardFooter>
