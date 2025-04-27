@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -12,7 +11,7 @@ import DockManagementTab from "@/components/DockManagementTab";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -122,6 +121,22 @@ const DockAllocationDashboard = () => {
     });
   };
 
+  const handleDeleteShip = async (shipId: string) => {
+    try {
+      setShips(prev => prev.filter(ship => ship.id !== shipId));
+      toast({
+        title: "Buque Eliminado",
+        description: "El buque ha sido eliminado exitosamente"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al eliminar el buque",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getShipById = (shipId: string | undefined) => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
@@ -156,7 +171,7 @@ const DockAllocationDashboard = () => {
               Buques
             </TabsTrigger>
             <TabsTrigger value="docks" className="flex items-center gap-1">
-              <SettingsIcon className="w-4 h-4" />
+              <DockIcon className="w-4 h-4" />
               Diques
             </TabsTrigger>
             <TabsTrigger value="weather" className="flex items-center gap-1">
@@ -168,7 +183,7 @@ const DockAllocationDashboard = () => {
         
         <TabsContent value="dashboard" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("ships")}>
               <CardHeader className="pb-2">
                 <CardTitle>Buques</CardTitle>
                 <CardDescription>Buques registrados actualmente</CardDescription>
@@ -178,7 +193,7 @@ const DockAllocationDashboard = () => {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("docks")}>
               <CardHeader className="pb-2">
                 <CardTitle>Diques Disponibles</CardTitle>
                 <CardDescription>Listos para asignación</CardDescription>
@@ -421,7 +436,10 @@ const DockAllocationDashboard = () => {
               <CardDescription>Agregar y ver buques en el sistema</CardDescription>
             </CardHeader>
             <CardContent>
-              <ShipsTable ships={ships} />
+              <ShipsTable 
+                ships={ships} 
+                onDeleteShip={handleDeleteShip}
+              />
             </CardContent>
           </Card>
           

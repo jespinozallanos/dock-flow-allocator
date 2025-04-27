@@ -218,7 +218,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                   variant="marine" 
                   size="sm" 
                   onClick={handleTodayClick}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-black"
                 >
                   <CalendarClockIcon className="h-4 w-4" />
                   Hoy
