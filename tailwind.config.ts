@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -91,6 +90,9 @@ export default {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'ship-sail': 'ship-sail 1.5s ease-out'
+			},
+			backgroundImage: {
+				'blue-stripes': 'linear-gradient(45deg, rgba(14, 165, 233, 0.05) 25%, transparent 25%, transparent 50%, rgba(14, 165, 233, 0.05) 50%, rgba(14, 165, 233, 0.05) 75%, transparent 75%, transparent)',
 			}
 		}
 	},
