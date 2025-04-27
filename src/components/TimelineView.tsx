@@ -275,22 +275,28 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                               <div className="absolute inset-0 flex flex-col">
                                 {dayAllocations.map((allocation, i) => {
                                   const ship = getShipById(allocation.shipId);
+                                  
+                                  if (!ship) {
+                                    console.log("Allocation without valid ship", allocation);
+                                    return null;
+                                  }
+                                  
                                   const height = `${100 / dayAllocations.length}%`;
                                   const top = `${(100 / dayAllocations.length) * i}%`;
                                   
                                   return (
                                     <div 
                                       key={`${allocation.id}-${i}`}
-                                      className={`absolute rounded text-white text-xs p-1 truncate ${ship ? getShipTypeClass(ship.type) : 'bg-gray-500'}`}
+                                      className={`absolute rounded text-white text-xs p-1 truncate ${getShipTypeClass(ship.type)}`}
                                       style={{ 
                                         height, 
                                         top, 
                                         left: '2px', 
                                         right: '2px' 
                                       }}
-                                      title={`${ship?.name || 'Buque Desconocido'} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
+                                      title={`${ship.name} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
                                     >
-                                      {ship?.name || 'Buque'}
+                                      {ship.name}
                                     </div>
                                   );
                                 })}
@@ -329,13 +335,18 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                   const ship = getShipById(allocation.shipId);
                   const dock = getDockById(allocation.dockId);
                   
+                  if (!ship) {
+                    console.log("List view: Allocation without valid ship", allocation);
+                    return null;
+                  }
+                  
                   return (
                     <div key={allocation.id} className="flex items-center gap-4 border-b pb-3">
                       <div className="w-1/4">
-                        <p className="font-medium">{ship?.name || 'Buque Desconocido'}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{ship?.type === 'container' ? 'Contenedor' : 
-                          ship?.type === 'bulk' ? 'Granel' : 
-                          ship?.type === 'tanker' ? 'Tanquero' : 'Pasajeros'}</p>
+                        <p className="font-medium">{ship.name}</p>
+                        <p className="text-sm text-muted-foreground capitalize">{ship.type === 'container' ? 'Contenedor' : 
+                          ship.type === 'bulk' ? 'Granel' : 
+                          ship.type === 'tanker' ? 'Tanquero' : 'Pasajeros'}</p>
                       </div>
                       <div className="w-1/4">
                         <p className="font-medium">{dock?.name || 'Dique Desconocido'}</p>
