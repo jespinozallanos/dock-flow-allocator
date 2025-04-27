@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Allocation, Ship, Dock, TimelineViewMode, WeatherData } from "@/types/types";
@@ -133,16 +132,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     setCurrentDate(newDate);
   };
 
-  // Function to determine if a day has a safe tide window
   const hasSafeTideWindow = (date: Date) => {
-    if (!weatherData?.tide.windows) return true; // Default to true if no tide data
+    if (!weatherData?.tide.windows) return true;
     
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
     
-    // Check if any tide window overlaps with this day
     return weatherData.tide.windows.some(window => {
       const windowStart = new Date(window.start);
       const windowEnd = new Date(window.end);
@@ -198,7 +195,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                   variant={viewMode === "week" ? "secondary" : "outline"} 
                   size="sm" 
                   onClick={() => setViewMode("week")}
-                  className="flex items-center gap-1"
+                  className={`flex items-center gap-1 ${viewMode === "week" ? "text-white" : ""}`}
                 >
                   <CalendarIcon className="h-4 w-4" />
                   Semana

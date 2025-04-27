@@ -1,14 +1,15 @@
-
 import { Button } from "@/components/ui/button";
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "@/components/ui/table";
 import { Ship } from "@/types/types";
+import { Trash2 } from "lucide-react";
 
 interface ShipsTableProps {
   ships: Ship[];
   onSelectShip?: (shipId: string) => void;
+  onDeleteShip?: (shipId: string) => void;
 }
 
-const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip }) => {
+const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip, onDeleteShip }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', { 
       dateStyle: 'short',
@@ -38,7 +39,7 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip }) => {
             <TableHead>Arrival</TableHead>
             <TableHead>Departure</TableHead>
             <TableHead>Priority</TableHead>
-            <TableHead className="text-right">Action</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -57,7 +58,7 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip }) => {
                 <TableCell>{formatDate(ship.arrivalTime)}</TableCell>
                 <TableCell>{formatDate(ship.departureTime)}</TableCell>
                 <TableCell>{getPriorityLabel(ship.priority)}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right space-x-2">
                   {onSelectShip && (
                     <Button 
                       variant="marine"
@@ -65,6 +66,15 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip }) => {
                       size="sm"
                     >
                       Allocate
+                    </Button>
+                  )}
+                  {onDeleteShip && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => onDeleteShip(ship.id)}
+                      size="sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </TableCell>
