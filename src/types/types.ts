@@ -74,6 +74,12 @@ export interface PythonModelParams {
   optimizationCriteria: 'waiting_time' | 'dock_utilization' | 'balanced';
 }
 
+// Define UnassignedShip type
+export interface UnassignedShip {
+  ship: Ship;
+  reason: string;
+}
+
 export interface PythonModelResult {
   allocations: Allocation[];
   metrics: {
@@ -83,7 +89,7 @@ export interface PythonModelResult {
   };
   weatherData?: WeatherData;
   weatherWarning?: boolean;
-  unassignedShips?: UnassignedShip[]; // Added this property to fix the type error
+  unassignedShips?: UnassignedShip[]; // Use the newly defined type
 }
 
 export type TabOption = 'dashboard' | 'allocation' | 'ships' | 'docks' | 'history';
