@@ -149,13 +149,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     });
   };
 
-  const operationalDocks = docks.filter(dock => dock.operationalStatus === 'operativo');
-
-  const handleTodayClick = () => {
-    setCurrentDate(new Date());
-    setViewMode("week");
-  };
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -254,10 +247,21 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {operationalDocks.map(dock => (
+                  {docks.map(dock => (
                     <tr key={dock.id} className="border-t">
                       <td className="p-2 text-sm font-medium border-r">
                         {dock.name}
+                        {dock.operationalStatus !== 'operativo' && (
+                          <div className="mt-1">
+                            <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs ${
+                              dock.operationalStatus === 'mantenimiento' 
+                                ? 'bg-yellow-100 text-yellow-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {dock.operationalStatus === 'mantenimiento' ? 'En Mantención' : 'Fuera de Servicio'}
+                            </span>
+                          </div>
+                        )}
                       </td>
                       {timelineDays.map((day, dayIndex) => {
                         const dayAllocations = allocationsByDock[dock.id]?.filter(
@@ -269,9 +273,15 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                         return (
                           <td 
                             key={dayIndex} 
-                            className={`p-1 h-12 relative border ${showTideWindows && !hasSafeTide ? 'bg-tide-danger/10' : ''}`}
+                            className={`p-1 h-12 relative border ${
+                              dock.operationalStatus !== 'operativo' 
+                                ? 'bg-gray-50' 
+                                : showTideWindows && !hasSafeTide 
+                                  ? 'bg-tide-danger/10' 
+                                  : ''
+                            }`}
                           >
-                            {dayAllocations.length > 0 ? (
+                            {dayAllocations.length > 0 && dock.operationalStatus === 'operativo' ? (
                               <div className="absolute inset-0 flex flex-col">
                                 {dayAllocations.map((allocation, i) => {
                                   const ship = getShipById(allocation.shipId);
