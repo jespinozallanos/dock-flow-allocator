@@ -4,10 +4,10 @@ import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 // Function to fetch real-time weather data for Talcahuano, Chile
 export const fetchWeatherData = async (): Promise<WeatherData> => {
   try {
-    // Using OpenWeatherMap API for Talcahuano, Chile
+    // Using Open Meteo API for Talcahuano, Chile
     // Coordinates for Talcahuano: -36.7247, -73.1169
     const response = await fetch(
-      `https://api.weatherapi.com/v1/forecast.json?key=d94f2a5a75a44bfb97830727231404&q=-36.7247,-73.1169&days=1&aqi=no&alerts=no`
+      `https://api.open-meteo.com/v1/forecast?latitude=-36.7247&longitude=-73.1169&current=temperature_2m,wind_speed_10m,wind_direction_10m&hourly=wind_speed_10m,wind_direction_10m&timezone=America/Santiago`
     );
     
     if (!response.ok) {
@@ -16,34 +16,31 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
     
     const data = await response.json();
     
-    // Convert from WeatherAPI format to our WeatherData format
+    // Convert wind speed from m/s to knots (1 m/s = 1.94384 knots)
+    const windSpeed = data.current.wind_speed_10m * 1.94384;
     
-    // Wind speed conversion from km/h to knots (1 km/h = 0.539957 knots)
-    const windSpeed = data.current.wind_kph * 0.539957;
-    
-    // For tide simulation, we'll use a combination of weather data and time-based calculation
-    // This is still a simulation as specialized marine APIs for tide data are typically paid
+    // For tide simulation, we'll use a combination of time-based calculation
     const hour = new Date().getHours();
     // Base tide level of 3.5 meters with a variation of 0.8 meters based on time
     const tideLevel = 3.5 + Math.sin(hour / 24 * 2 * Math.PI) * 0.8;
     
     // Generate tide windows for the next 24 hours
-    const tideWindows = generateTideWindows(3.0); // Minimum tide level now 3 meters
+    const tideWindows = generateTideWindows(3.0);
     
     return {
-      location: `${data.location.name}, ${data.location.country}`,
+      location: "Talcahuano, Chile",
       timestamp: new Date().toISOString(),
       tide: {
         current: parseFloat(tideLevel.toFixed(1)),
         unit: "metros",
-        minimum: 3.0, // Updated minimum required tide for ship entry to 3 meters
+        minimum: 3.0,
         windows: tideWindows,
       },
       wind: {
         speed: parseFloat(windSpeed.toFixed(1)),
-        direction: getWindDirection(data.current.wind_degree),
+        direction: getWindDirection(data.current.wind_direction_10m),
         unit: "nudos",
-        maximum: 8.0, // Updated maximum allowed wind for ship entry to 8 knots
+        maximum: 8.0,
       }
     };
   } catch (error) {
@@ -55,10 +52,10 @@ export const fetchWeatherData = async (): Promise<WeatherData> => {
       tide: { 
         current: 3.5, 
         unit: "metros", 
-        minimum: 3.0, // Updated minimum required tide
+        minimum: 3.0,
         windows: generateTideWindows(3.0), 
       },
-      wind: { speed: 5.0, direction: "N", unit: "nudos", maximum: 8.0 } // Updated maximum allowed wind
+      wind: { speed: 5.0, direction: "N", unit: "nudos", maximum: 8.0 }
     };
   }
 };
