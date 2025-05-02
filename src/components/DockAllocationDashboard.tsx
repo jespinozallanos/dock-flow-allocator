@@ -16,6 +16,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import WeatherStatusCard from "@/components/WeatherStatusCard";
+import AllocationStatusCard from "@/components/AllocationStatusCard";
 
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -310,15 +312,10 @@ const DockAllocationDashboard = () => {
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Asignaciones</CardTitle>
-                <CardDescription>Asignaciones de atraque programadas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{allocations.length}</div>
-              </CardContent>
-            </Card>
+            <AllocationStatusCard 
+              allocations={allocations} 
+              onViewAllocations={() => setActiveTab("allocation")}
+            />
           </div>
           
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
@@ -374,44 +371,7 @@ const DockAllocationDashboard = () => {
 
             <div className="space-y-4">
               {weatherData && (
-                <Card className="border-marine-DEFAULT border-opacity-20 bg-marine-DEFAULT bg-opacity-5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
-                      <CloudIcon className="h-5 w-5" />
-                      Condiciones Climáticas - {weatherData.location}
-                    </CardTitle>
-                    <CardDescription>
-                      Actualizado: {new Date(weatherData.timestamp).toLocaleString('es-ES')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Nivel de Marea:</span>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${weatherData.tide.current >= 3 ? 'text-tide-safe' : 'text-tide-danger'}`}>
-                            {weatherData.tide.current.toFixed(1)} {weatherData.tide.unit}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            (Mín: {weatherData.tide.minimum} {weatherData.tide.unit})
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Velocidad del Viento:</span>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${weatherData.wind.speed <= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                            {weatherData.wind.speed.toFixed(1)} {weatherData.wind.unit}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            (Máx: {weatherData.wind.maximum} {weatherData.wind.unit})
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <WeatherStatusCard weatherData={weatherData} />
               )}
               
               {weatherData?.tide.windows && (
