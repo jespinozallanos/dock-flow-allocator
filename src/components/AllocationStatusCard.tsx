@@ -1,31 +1,25 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TimerIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Allocation } from "@/types/types";
-
 interface AllocationStatusCardProps {
   allocations: Allocation[];
   className?: string;
   onViewAllocations?: () => void;
 }
-
 const AllocationStatusCard: React.FC<AllocationStatusCardProps> = ({
   allocations,
   className = "",
   onViewAllocations
 }) => {
-  return (
-    <Card className={`${className} overflow-hidden border-l-4 border-l-marine-DEFAULT shadow-md hover:shadow-lg transition-shadow duration-200`}>
+  return <Card className={`${className} overflow-hidden border-l-4 border-l-marine-DEFAULT shadow-md hover:shadow-lg transition-shadow duration-200`}>
       <CardHeader className="bg-gradient-to-r from-marine-DEFAULT/10 to-transparent pb-2">
         <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
           <TimerIcon className="h-5 w-5" />
           Asignaciones
         </CardTitle>
-        <CardDescription>
-          Asignaciones de atraque programadas
-        </CardDescription>
+        <CardDescription>Asignaciones de diques programadas</CardDescription>
       </CardHeader>
       
       <CardContent className="pt-4">
@@ -57,20 +51,11 @@ const AllocationStatusCard: React.FC<AllocationStatusCardProps> = ({
             </div>
           </div>
           
-          {onViewAllocations && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onViewAllocations}
-              className="mt-4 w-full"
-            >
+          {onViewAllocations && <Button variant="outline" size="sm" onClick={onViewAllocations} className="mt-4 w-full">
               Ver detalles
-            </Button>
-          )}
+            </Button>}
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default AllocationStatusCard;

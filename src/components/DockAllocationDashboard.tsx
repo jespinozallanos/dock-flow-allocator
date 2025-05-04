@@ -18,7 +18,6 @@ import { Slider } from "@/components/ui/slider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import WeatherStatusCard from "@/components/WeatherStatusCard";
 import AllocationStatusCard from "@/components/AllocationStatusCard";
-
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [ships, setShips] = useState<Ship[]>([]);
@@ -28,12 +27,11 @@ const DockAllocationDashboard = () => {
   const [optimizationCriteria, setOptimizationCriteria] = useState<'waiting_time' | 'dock_utilization' | 'balanced'>('balanced');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherWarning, setWeatherWarning] = useState(false);
-  
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const [windSpeedLimit, setWindSpeedLimit] = useState(8.0);
   const [tideLevelLimit, setTideLevelLimit] = useState(3.0);
-
   const handleWindSpeedChange = (value: number[]) => {
     setWindSpeedLimit(value[0]);
     if (weatherData) {
@@ -51,7 +49,6 @@ const DockAllocationDashboard = () => {
       });
     }
   };
-
   const handleTideLevelChange = (value: number[]) => {
     setTideLevelLimit(value[0]);
     if (weatherData) {
@@ -69,22 +66,14 @@ const DockAllocationDashboard = () => {
       });
     }
   };
-
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const [shipsData, docksData, allocationsData, weather] = await Promise.all([
-          getShips(),
-          getDocks(),
-          getAllocations(),
-          fetchWeatherData()
-        ]);
-        
+        const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
         setShips(shipsData);
         setDocks(docksData);
         setAllocations(allocationsData);
-        
         const initialWeatherData = {
           ...weather,
           settings: {
@@ -92,11 +81,9 @@ const DockAllocationDashboard = () => {
             minTideLevel: weather.tide.minimum || 3.0
           }
         };
-        
         setWeatherData(initialWeatherData);
         setWindSpeedLimit(initialWeatherData.settings?.maxWindSpeed || 8.0);
         setTideLevelLimit(initialWeatherData.settings?.minTideLevel || 3.0);
-        
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
       } catch (error) {
@@ -110,19 +97,15 @@ const DockAllocationDashboard = () => {
         setIsLoading(false);
       }
     };
-    
     loadData();
   }, [toast]);
-
   const handleShipAdded = async (ship: Ship) => {
     setShips(prev => [...prev, ship]);
     setActiveTab("ships");
   };
-
   const handleRunAllocationModel = async () => {
     setIsLoading(true);
     setWeatherWarning(false);
-    
     try {
       const modelParams = {
         ships,
@@ -134,16 +117,13 @@ const DockAllocationDashboard = () => {
           minTideLevel: tideLevelLimit
         }
       };
-      
       if (weatherData) {
         weatherData.settings = {
           maxWindSpeed: windSpeedLimit,
           minTideLevel: tideLevelLimit
         };
       }
-      
       const result = await runAllocationModel(modelParams);
-      
       if (result.weatherWarning) {
         setWeatherWarning(true);
         setWeatherData(result.weatherData || null);
@@ -155,10 +135,8 @@ const DockAllocationDashboard = () => {
       } else {
         setAllocations(prev => [...prev, ...result.allocations]);
         setWeatherData(result.weatherData || null);
-        
         const updatedDocks = await updateDockStatus([...allocations, ...result.allocations]);
         setDocks(updatedDocks);
-        
         if (result.unassignedShips && result.unassignedShips.length > 0) {
           toast({
             title: "Asignación Completada Parcialmente",
@@ -172,20 +150,19 @@ const DockAllocationDashboard = () => {
             variant: "default"
           });
         }
-        
         if (result.unassignedShips && result.unassignedShips.length > 0) {
           setActiveTab("allocation");
         } else {
           setActiveTab("dashboard");
         }
       }
-      
       if (result.unassignedShips && result.unassignedShips.length > 0) {
-        const unassignedContent = (
-          <div className="space-y-4">
+        const unassignedContent = <div className="space-y-4">
             <h3 className="font-medium text-lg text-red-600">Buques No Asignados:</h3>
-            {result.unassignedShips.map(({ ship, reason }) => (
-              <div key={ship.id} className="p-4 border rounded-md bg-red-50">
+            {result.unassignedShips.map(({
+            ship,
+            reason
+          }) => <div key={ship.id} className="p-4 border rounded-md bg-red-50">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-medium">{ship.name}</p>
@@ -197,15 +174,12 @@ const DockAllocationDashboard = () => {
                     Razón: {reason}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        );
-        
+              </div>)}
+          </div>;
         toast({
           title: "Detalles de Buques No Asignados",
           description: unassignedContent,
-          duration: 10000,
+          duration: 10000
         });
       }
     } catch (error) {
@@ -219,15 +193,13 @@ const DockAllocationDashboard = () => {
       setIsLoading(false);
     }
   };
-
   const handleDockUpdate = (updatedDock: Dock) => {
     setDocks(prev => prev.map(dock => dock.id === updatedDock.id ? updatedDock : dock));
     toast({
       title: "Dique Actualizado",
-      description: `${updatedDock.name} ha sido actualizado correctamente`,
+      description: `${updatedDock.name} ha sido actualizado correctamente`
     });
   };
-
   const handleDeleteShip = async (shipId: string) => {
     try {
       setShips(prev => prev.filter(ship => ship.id !== shipId));
@@ -243,28 +215,24 @@ const DockAllocationDashboard = () => {
       });
     }
   };
-
   const getShipById = (shipId: string | undefined) => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
   };
-  
   const getShipsFromOccupiedString = (occupiedBy: string | undefined) => {
     if (!occupiedBy) return [];
     const shipIds = occupiedBy.split(',');
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
-
-  return (
-    <div className="container py-8 max-w-7xl">
+  return <div className="container py-8 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-marine-DEFAULT">Sistema de Asignación de Diques</h1>
-        <p className="text-muted-foreground">Optimiza la asignación de atraques con nuestro sistema basado en IA</p>
+        <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
+        <p className="text-muted-foreground">Optimización de asignación de diques basado en IA</p>
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex justify-between items-center">
-          <TabsList>
+        <div className="flex justify-between items-center bg-slate-900">
+          <TabsList className="bg-slate-900">
             <TabsTrigger value="dashboard" className="flex items-center gap-1">
               <AnchorIcon className="w-4 h-4" />
               Panel Principal
@@ -312,26 +280,18 @@ const DockAllocationDashboard = () => {
               </CardContent>
             </Card>
             
-            <AllocationStatusCard 
-              allocations={allocations} 
-              onViewAllocations={() => setActiveTab("allocation")}
-            />
+            <AllocationStatusCard allocations={allocations} onViewAllocations={() => setActiveTab("allocation")} />
           </div>
           
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             <div className="xl:col-span-3 space-y-6">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-marine-DEFAULT">Cronograma de Asignación</CardTitle>
+                <CardHeader className="bg-slate-950">
+                  <CardTitle className="text-gray-50">Cronograma de Asignación</CardTitle>
                   <CardDescription>Vista general de asignaciones programadas</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TimelineView 
-                    allocations={allocations} 
-                    ships={ships} 
-                    docks={docks}
-                    weatherData={weatherData || undefined}
-                  />
+                  <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
                 </CardContent>
               </Card>
 
@@ -342,16 +302,10 @@ const DockAllocationDashboard = () => {
                     <CardDescription>Listado de todos los buques en el sistema</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ShipsTable 
-                      ships={ships}
-                    />
+                    <ShipsTable ships={ships} />
                   </CardContent>
                   <CardFooter>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setActiveTab("ships")}
-                      className="ml-auto"
-                    >
+                    <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto">
                       Gestionar Buques
                     </Button>
                   </CardFooter>
@@ -359,27 +313,14 @@ const DockAllocationDashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {docks.map(dock => (
-                  <DockCard 
-                    key={dock.id} 
-                    dock={dock}
-                    ships={getShipsFromOccupiedString(dock.occupiedBy)}
-                  />
-                ))}
+                {docks.map(dock => <DockCard key={dock.id} dock={dock} ships={getShipsFromOccupiedString(dock.occupiedBy)} />)}
               </div>
             </div>
 
             <div className="space-y-4">
-              {weatherData && (
-                <WeatherStatusCard weatherData={weatherData} />
-              )}
+              {weatherData && <WeatherStatusCard weatherData={weatherData} />}
               
-              {weatherData?.tide.windows && (
-                <TideWindowDisplay 
-                  tideWindows={weatherData.tide.windows} 
-                  className="mb-4"
-                />
-              )}
+              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} className="mb-4" />}
             </div>
           </div>
         </TabsContent>
@@ -393,21 +334,16 @@ const DockAllocationDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {weatherWarning && (
-                <Alert variant="destructive" className="mb-4">
+              {weatherWarning && <Alert variant="destructive" className="mb-4">
                   <AlertTitle>Condiciones climáticas inadecuadas</AlertTitle>
                   <AlertDescription>
                     Las condiciones actuales de marea ({weatherData?.tide.current.toFixed(1)} m) y/o viento ({weatherData?.wind.speed.toFixed(1)} nudos) no permiten la asignación de buques. Se requiere marea mínima de 3m y viento máximo de 8 nudos.
                   </AlertDescription>
-                </Alert>
-              )}
+                </Alert>}
             
               <div className="max-w-md">
                 <label className="text-sm font-medium block mb-2">Criterios de Optimización</label>
-                <Select 
-                  value={optimizationCriteria} 
-                  onValueChange={(value) => setOptimizationCriteria(value as any)}
-                >
+                <Select value={optimizationCriteria} onValueChange={value => setOptimizationCriteria(value as any)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona criterios de optimización" />
                   </SelectTrigger>
@@ -421,15 +357,10 @@ const DockAllocationDashboard = () => {
               
               <div className="border rounded-md p-4 bg-muted/50">
                 <h3 className="font-medium mb-2">Buques Pendientes de Asignación</h3>
-                <ShipsTable 
-                  ships={ships.filter(ship => 
-                    !allocations.some(a => a.shipId === ship.id)
-                  )}
-                />
+                <ShipsTable ships={ships.filter(ship => !allocations.some(a => a.shipId === ship.id))} />
               </div>
               
-              {weatherData?.tide.windows && (
-                <div className="border rounded-md p-4 bg-blue-50">
+              {weatherData?.tide.windows && <div className="border rounded-md p-4 bg-blue-50">
                   <h3 className="font-medium mb-2 text-marine-DEFAULT flex items-center gap-2">
                     <WavesIcon className="h-4 w-4" />
                     Ventanas de Marea para Asignación
@@ -440,45 +371,34 @@ const DockAllocationDashboard = () => {
                   </div>
                   
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                    {weatherData.tide.windows
-                      .filter(window => window.isSafe)
-                      .map((window, i) => (
-                        <div 
-                          key={i}
-                          className="p-2 border bg-white rounded flex justify-between items-center text-sm"
-                        >
+                    {weatherData.tide.windows.filter(window => window.isSafe).map((window, i) => <div key={i} className="p-2 border bg-white rounded flex justify-between items-center text-sm">
                           <span>
                             {new Date(window.start).toLocaleDateString('es-ES')}
                             {' '}
-                            {new Date(window.start).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})} 
+                            {new Date(window.start).toLocaleTimeString('es-ES', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })} 
                             - 
-                            {new Date(window.end).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}
+                            {new Date(window.end).toLocaleTimeString('es-ES', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                           </span>
                           <span className="font-medium text-tide-safe">
                             {window.level.toFixed(1)}m
                           </span>
-                        </div>
-                      ))
-                    }
+                        </div>)}
                     
-                    {weatherData.tide.windows.filter(window => window.isSafe).length === 0 && (
-                      <p className="text-center text-muted-foreground p-4">No hay ventanas seguras disponibles</p>
-                    )}
+                    {weatherData.tide.windows.filter(window => window.isSafe).length === 0 && <p className="text-center text-muted-foreground p-4">No hay ventanas seguras disponibles</p>}
                   </div>
-                </div>
-              )}
+                </div>}
             </CardContent>
             <CardFooter className="flex justify-between border-t pt-6">
               <Button variant="outline" onClick={() => setActiveTab("ships")}>
                 Agregar Más Buques
               </Button>
-              <Button 
-                onClick={handleRunAllocationModel} 
-                disabled={isLoading}
-                variant="marine"
-                size="xl"
-                className="transition-all font-bold transform hover:scale-105"
-              >
+              <Button onClick={handleRunAllocationModel} disabled={isLoading} variant="marine" size="xl" className="transition-all font-bold transform hover:scale-105">
                 {isLoading ? "Procesando..." : "Ejecutar Modelo de Asignación"}
               </Button>
             </CardFooter>
@@ -492,10 +412,7 @@ const DockAllocationDashboard = () => {
               <CardDescription>Agregar y ver buques en el sistema</CardDescription>
             </CardHeader>
             <CardContent>
-              <ShipsTable 
-                ships={ships} 
-                onDeleteShip={handleDeleteShip}
-              />
+              <ShipsTable ships={ships} onDeleteShip={handleDeleteShip} />
             </CardContent>
           </Card>
           
@@ -515,8 +432,7 @@ const DockAllocationDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {weatherData ? (
-                <div className="space-y-8">
+              {weatherData ? <div className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <Card className="border-marine-DEFAULT/20">
                       <CardHeader className="pb-2">
@@ -543,13 +459,7 @@ const DockAllocationDashboard = () => {
                                 <label>Nivel mínimo requerido</label>
                                 <span className="font-medium">{tideLevelLimit.toFixed(1)} {weatherData.tide.unit}</span>
                               </div>
-                              <Slider
-                                value={[tideLevelLimit]}
-                                onValueChange={handleTideLevelChange}
-                                min={2.0}
-                                max={5.0}
-                                step={0.1}
-                              />
+                              <Slider value={[tideLevelLimit]} onValueChange={handleTideLevelChange} min={2.0} max={5.0} step={0.1} />
                             </div>
                             
                             <div className="flex items-center justify-between">
@@ -588,13 +498,7 @@ const DockAllocationDashboard = () => {
                                 <label>Velocidad máxima permitida</label>
                                 <span className="font-medium">{windSpeedLimit.toFixed(1)} {weatherData.wind.unit}</span>
                               </div>
-                              <Slider
-                                value={[windSpeedLimit]}
-                                onValueChange={handleWindSpeedChange}
-                                min={5.0}
-                                max={15.0}
-                                step={0.1}
-                              />
+                              <Slider value={[windSpeedLimit]} onValueChange={handleWindSpeedChange} min={5.0} max={15.0} step={0.1} />
                             </div>
                             
                             <div className="flex items-center justify-between">
@@ -609,47 +513,36 @@ const DockAllocationDashboard = () => {
                     </Card>
                   </div>
                   
-                  {weatherData?.tide.windows && (
-                    <TideWindowDisplay tideWindows={weatherData.tide.windows} />
-                  )}
+                  {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} />}
                   
-                  <Button 
-                    onClick={async () => {
-                      try {
-                        setIsLoading(true);
-                        const newWeatherData = await fetchWeatherData();
-                        setWeatherData(newWeatherData);
-                        toast({
-                          title: "Datos Actualizados",
-                          description: "Información climática actualizada correctamente"
-                        });
-                      } catch (error) {
-                        toast({
-                          title: "Error",
-                          description: "No se pudo actualizar la información climática",
-                          variant: "destructive"
-                        });
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }} 
-                    disabled={isLoading}
-                    className="bg-marine-DEFAULT hover:bg-marine-light text-white"
-                  >
+                  <Button onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  const newWeatherData = await fetchWeatherData();
+                  setWeatherData(newWeatherData);
+                  toast({
+                    title: "Datos Actualizados",
+                    description: "Información climática actualizada correctamente"
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "No se pudo actualizar la información climática",
+                    variant: "destructive"
+                  });
+                } finally {
+                  setIsLoading(false);
+                }
+              }} disabled={isLoading} className="bg-marine-DEFAULT hover:bg-marine-light text-white">
                     {isLoading ? "Actualizando..." : "Actualizar Datos Climáticos"}
                   </Button>
-                </div>
-              ) : (
-                <div className="text-center py-12">
+                </div> : <div className="text-center py-12">
                   <p className="text-muted-foreground">Cargando datos climáticos...</p>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
-
 export default DockAllocationDashboard;
