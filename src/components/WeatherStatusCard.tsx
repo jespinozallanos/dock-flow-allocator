@@ -1,17 +1,14 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CloudIcon, WavesIcon, WindIcon } from "lucide-react";
 import { WeatherData } from "@/types/types";
-
 interface WeatherStatusCardProps {
   weatherData: WeatherData;
   className?: string;
 }
-
 const WeatherStatusCard: React.FC<WeatherStatusCardProps> = ({
   weatherData,
-  className = "",
+  className = ""
 }) => {
   // Format the timestamp to a readable date and time
   const formattedDate = new Date(weatherData.timestamp).toLocaleString('es-ES', {
@@ -21,9 +18,7 @@ const WeatherStatusCard: React.FC<WeatherStatusCardProps> = ({
     hour: '2-digit',
     minute: '2-digit'
   });
-
-  return (
-    <Card className={`border-marine-DEFAULT border-opacity-20 bg-gradient-to-r from-marine-DEFAULT/5 to-transparent ${className}`}>
+  return <Card className={`border-marine-DEFAULT border-opacity-20 bg-gradient-to-r from-marine-DEFAULT/5 to-transparent ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
           <CloudIcon className="h-5 w-5" />
@@ -44,7 +39,7 @@ const WeatherStatusCard: React.FC<WeatherStatusCardProps> = ({
               
               <div className="flex flex-col items-end">
                 <div className="flex items-baseline">
-                  <span className={`text-2xl font-bold ${weatherData.tide.current >= weatherData.tide.minimum ? 'text-tide-safe' : 'text-tide-danger'}`}>
+                  <span className="text-sm">
                     {weatherData.tide.current.toFixed(1)}
                   </span>
                   <span className="ml-1 text-gray-500">{weatherData.tide.unit}</span>
@@ -86,8 +81,6 @@ const WeatherStatusCard: React.FC<WeatherStatusCardProps> = ({
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default WeatherStatusCard;
