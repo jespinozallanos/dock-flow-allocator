@@ -6,7 +6,7 @@ const Index = () => {
       
       {/* ASMAR Logo */}
       <div className="absolute top-4 right-8 z-30">
-        <img src="/lovable-uploads/28e585db-dc69-49ef-9a3e-937fe48ce44c.png" alt="ASMAR Logo" className="h-19 w-auto" />
+        <img src="/lovable-uploads/28e585db-dc69-49ef-9a3e-937fe48ce44c.png" alt="ASMAR Logo" className="h-14 w-auto" />
       </div>
       
       <div className="relative z-20">
