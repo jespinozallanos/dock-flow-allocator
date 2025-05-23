@@ -59,15 +59,20 @@ export const runPythonAllocationModel = async (
 };
 
 /**
- * Función de utilidad que permite usar el modelo Python si está disponible,
- * o recurrir al modelo de simulación JavaScript si no lo está
+ * Función de utilidad que permite probar la conexión a la API Python
  */
 export const testPythonApiConnection = async (): Promise<boolean> => {
   try {
+    // Intentamos hacer una petición simple para ver si la API está disponible
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 segundo de timeout
+    
     const response = await fetch(`${API_BASE_URL}/api/allocation-model`, {
       method: 'HEAD',
-      timeout: 1000, // Esperar máximo 1 segundo
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     console.log("API Python no disponible. Se usará el modelo de simulación.");
