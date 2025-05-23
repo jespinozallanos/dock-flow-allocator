@@ -11,7 +11,8 @@ import DockManagementTab from "@/components/DockManagementTab";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon } from "lucide-react";
+import { testPythonApiConnection } from "@/services/pythonModelService";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
@@ -27,6 +28,7 @@ const DockAllocationDashboard = () => {
   const [optimizationCriteria, setOptimizationCriteria] = useState<'waiting_time' | 'dock_utilization' | 'balanced'>('balanced');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherWarning, setWeatherWarning] = useState(false);
+  const [isPythonModelAvailable, setIsPythonModelAvailable] = useState(false);
   const {
     toast
   } = useToast();
@@ -70,10 +72,16 @@ const DockAllocationDashboard = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
+        
+        // Comprobar si el modelo Python está disponible
+        const pythonAvailable = await testPythonApiConnection();
+        setIsPythonModelAvailable(pythonAvailable);
+        
         const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
         setShips(shipsData);
         setDocks(docksData);
         setAllocations(allocationsData);
+        
         const initialWeatherData = {
           ...weather,
           settings: {
@@ -81,9 +89,11 @@ const DockAllocationDashboard = () => {
             minTideLevel: weather.tide.minimum || 3.0
           }
         };
+        
         setWeatherData(initialWeatherData);
         setWindSpeedLimit(initialWeatherData.settings?.maxWindSpeed || 8.0);
         setTideLevelLimit(initialWeatherData.settings?.minTideLevel || 3.0);
+        
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
       } catch (error) {
@@ -228,6 +238,12 @@ const DockAllocationDashboard = () => {
       <div className="mb-8">
         <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
         <p className="text-muted-foreground">Optimización de asignación de diques basado en IA</p>
+        {isPythonModelAvailable && (
+          <div className="flex items-center gap-2 mt-2 bg-green-100 text-green-800 px-3 py-1 rounded-md border border-green-300 w-fit">
+            <BrainCircuitIcon className="h-4 w-4" />
+            <span className="text-sm font-medium">Modelo Matemático Python Activo</span>
+          </div>
+        )}
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -330,7 +346,7 @@ const DockAllocationDashboard = () => {
             <CardHeader>
               <CardTitle className="text-marine-DEFAULT">Herramienta de Asignación de Atraques</CardTitle>
               <CardDescription>
-                Ejecuta el modelo de asignación de atraques basado en IA para optimizar las asignaciones
+                Ejecuta el modelo de asignación de atraques {isPythonModelAvailable ? 'basado en optimización matemática' : 'basado en simulación'} para optimizar las asignaciones
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

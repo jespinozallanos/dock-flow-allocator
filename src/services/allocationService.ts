@@ -1,4 +1,3 @@
-
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 
@@ -274,6 +273,25 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
     };
   }
   
+  // Si la API Python está disponible, usar el modelo matemático
+  if (isPythonApiAvailable) {
+    try {
+      console.log("Usando modelo matemático Python");
+      return await runPythonAllocationModel(params, weatherData);
+    } catch (error) {
+      console.error("Error con la API Python. Se usará el modelo de simulación:", error);
+      // Si hay error, usar el modelo de simulación como fallback
+      return runSimulationModel(params, weatherData);
+    }
+  } else {
+    console.log("Usando modelo de simulación JavaScript");
+    // Si la API Python no está disponible, usar el modelo de simulación
+    return runSimulationModel(params, weatherData);
+  }
+};
+
+// Modelo de simulación JavaScript (código existente)
+const runSimulationModel = async (params: PythonModelParams, weatherData: WeatherData): Promise<PythonModelResult> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const allocations: Allocation[] = [];
@@ -465,3 +483,12 @@ export const updateDockStatus = (allocations: Allocation[]): Promise<Dock[]> => 
   
   return Promise.resolve(updatedDocks);
 };
+
+// Variable para rastrear si la API Python está disponible
+let isPythonApiAvailable = false;
+
+// Comprobar al inicio si la API Python está disponible
+testPythonApiConnection().then(available => {
+  isPythonApiAvailable = available;
+  console.log(`API Python ${available ? 'disponible' : 'no disponible'}. ${available ? 'Se usará el modelo matemático de optimización.' : 'Se usará el modelo de simulación.'}`);
+});
