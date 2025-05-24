@@ -63,19 +63,32 @@ export const runPythonAllocationModel = async (
  */
 export const testPythonApiConnection = async (): Promise<boolean> => {
   try {
-    // Intentamos hacer una petición simple para ver si la API está disponible
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 segundo de timeout
+    console.log("Probando conexión con servidor Python...");
     
-    const response = await fetch(`${API_BASE_URL}/api/allocation-model`, {
-      method: 'HEAD',
+    // Intentamos hacer una petición GET simple a la ruta raíz o health check
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
+    
+    const response = await fetch(`${API_BASE_URL}/`, {
+      method: 'GET',
       signal: controller.signal
     });
     
     clearTimeout(timeoutId);
-    return response.ok;
+    
+    console.log("Respuesta del servidor Python:", response.status);
+    
+    // Si el servidor responde (incluso con 404), significa que está corriendo
+    // Un servidor Flask típicamente responde con 404 en la ruta raíz si no está definida
+    if (response.status === 200 || response.status === 404) {
+      console.log("Servidor Python detectado correctamente");
+      return true;
+    }
+    
+    return false;
   } catch (error) {
-    console.log("API Python no disponible. Se usará el modelo de simulación.");
+    console.log("Error al conectar con servidor Python:", error);
+    console.log("Verifica que el servidor esté corriendo en http://localhost:5000");
     return false;
   }
 };

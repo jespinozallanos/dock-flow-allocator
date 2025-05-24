@@ -75,7 +75,10 @@ const DockAllocationDashboard = () => {
       try {
         setIsLoading(true);
         
+        // Intentar detectar si Python está disponible con más intentos
+        console.log("Verificando disponibilidad del servidor Python...");
         const pythonAvailable = await testPythonApiConnection();
+        console.log("Estado del servidor Python:", pythonAvailable ? "Disponible" : "No disponible");
         setIsPythonModelAvailable(pythonAvailable);
         
         const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
@@ -117,10 +120,14 @@ const DockAllocationDashboard = () => {
   };
 
   const handleRunAllocationModel = async () => {
-    if (!isPythonModelAvailable) {
+    // Verificar nuevamente la conexión antes de ejecutar
+    const pythonAvailable = await testPythonApiConnection();
+    setIsPythonModelAvailable(pythonAvailable);
+    
+    if (!pythonAvailable) {
       toast({
         title: "Servidor Python No Disponible",
-        description: "El modelo de optimización requiere que el servidor Python esté ejecutándose. Ve a la pestaña de Asignación para más detalles.",
+        description: "No se puede conectar al servidor Python. Verifica que esté corriendo en http://localhost:5000",
         variant: "destructive"
       });
       setActiveTab("allocation");
@@ -229,7 +236,9 @@ const DockAllocationDashboard = () => {
       
       toast({
         title: "Error del Modelo Python",
-        description: errorMessage.split('\n')[0], // Solo la primera línea para el toast
+        description: errorMessage.includes("Failed to fetch") 
+          ? "No se puede conectar al servidor Python. Verifica que esté corriendo en http://localhost:5000"
+          : errorMessage.split('\n')[0],
         variant: "destructive",
         duration: 8000
       });
