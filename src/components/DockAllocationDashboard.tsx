@@ -76,10 +76,20 @@ const DockAllocationDashboard = () => {
         setIsLoading(true);
         
         // Intentar detectar si Python está disponible con más intentos
-        console.log("Verificando disponibilidad del servidor Python...");
+        console.log("🔍 Verificando disponibilidad del servidor Python...");
         const pythonAvailable = await testPythonApiConnection();
-        console.log("Estado del servidor Python:", pythonAvailable ? "Disponible" : "No disponible");
+        console.log("📊 Estado final del servidor Python:", pythonAvailable ? "✅ Disponible" : "❌ No disponible");
         setIsPythonModelAvailable(pythonAvailable);
+        
+        if (!pythonAvailable) {
+          console.log("⚠️ ATENCIÓN: El servidor Python no está disponible.");
+          console.log("Para ejecutar el servidor Python:");
+          console.log("1. Abre una terminal");
+          console.log("2. Navega a: cd src/python/");
+          console.log("3. Instala dependencias: pip install -r requirements.txt");
+          console.log("4. Ejecuta el servidor: python api.py");
+          console.log("5. Verifica que aparezca: 'Running on http://127.0.0.1:5000'");
+        }
         
         const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
         setShips(shipsData);
@@ -101,7 +111,7 @@ const DockAllocationDashboard = () => {
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error("❌ Error loading data:", error);
         toast({
           title: "Error",
           description: "Error al cargar datos",
@@ -120,11 +130,15 @@ const DockAllocationDashboard = () => {
   };
 
   const handleRunAllocationModel = async () => {
+    console.log("🚀 Iniciando proceso de asignación...");
+    
     // Verificar nuevamente la conexión antes de ejecutar
+    console.log("🔄 Re-verificando conexión con Python...");
     const pythonAvailable = await testPythonApiConnection();
     setIsPythonModelAvailable(pythonAvailable);
     
     if (!pythonAvailable) {
+      console.log("❌ No se puede ejecutar: Servidor Python no disponible");
       toast({
         title: "Servidor Python No Disponible",
         description: "No se puede conectar al servidor Python. Verifica que esté corriendo en http://localhost:5000",
@@ -134,8 +148,10 @@ const DockAllocationDashboard = () => {
       return;
     }
 
+    console.log("✅ Servidor Python disponible, procediendo con asignación...");
     setIsLoading(true);
     setWeatherWarning(false);
+    
     try {
       console.log("Limpiando asignaciones anteriores...");
       setAllocations([]);
@@ -166,7 +182,9 @@ const DockAllocationDashboard = () => {
         };
       }
 
+      console.log("📤 Enviando parámetros al modelo Python:", modelParams);
       const result = await runAllocationModel(modelParams);
+      console.log("📥 Resultado recibido del modelo Python:", result);
       
       if (result.weatherWarning) {
         setWeatherWarning(true);
@@ -231,16 +249,23 @@ const DockAllocationDashboard = () => {
         });
       }
     } catch (error) {
-      console.error("Error running allocation model:", error);
+      console.error("❌ Error running allocation model:", error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+      
+      let userFriendlyMessage = "";
+      if (errorMessage.includes("Failed to fetch") || errorMessage.includes("fetch")) {
+        userFriendlyMessage = "No se puede conectar al servidor Python. Asegúrate de que esté corriendo:\n\n1. cd src/python/\n2. python api.py\n3. Debe mostrar: 'Running on http://127.0.0.1:5000'";
+      } else if (errorMessage.includes("ECONNREFUSED")) {
+        userFriendlyMessage = "Conexión rechazada. El servidor Python no está escuchando en el puerto 5000.";
+      } else {
+        userFriendlyMessage = errorMessage.split('\n')[0];
+      }
       
       toast({
         title: "Error del Modelo Python",
-        description: errorMessage.includes("Failed to fetch") 
-          ? "No se puede conectar al servidor Python. Verifica que esté corriendo en http://localhost:5000"
-          : errorMessage.split('\n')[0],
+        description: userFriendlyMessage,
         variant: "destructive",
-        duration: 8000
+        duration: 10000
       });
     } finally {
       setIsLoading(false);

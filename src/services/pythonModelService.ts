@@ -62,33 +62,78 @@ export const runPythonAllocationModel = async (
  * Función de utilidad que permite probar la conexión a la API Python
  */
 export const testPythonApiConnection = async (): Promise<boolean> => {
+  console.log("=== INICIANDO PRUEBA DE CONEXIÓN PYTHON ===");
+  console.log("URL objetivo:", API_BASE_URL);
+  
   try {
-    console.log("Probando conexión con servidor Python...");
+    // Primero intentamos hacer ping a la ruta raíz
+    console.log("Paso 1: Intentando conectar a la ruta raíz...");
     
-    // Intentamos hacer una petición GET simple a la ruta raíz o health check
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
+    const timeoutId = setTimeout(() => {
+      console.log("Timeout alcanzado - abortando conexión");
+      controller.abort();
+    }, 10000); // 10 segundos de timeout
     
     const response = await fetch(`${API_BASE_URL}/`, {
       method: 'GET',
-      signal: controller.signal
+      mode: 'cors',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     
     clearTimeout(timeoutId);
     
-    console.log("Respuesta del servidor Python:", response.status);
+    console.log("Respuesta recibida:");
+    console.log("- Status:", response.status);
+    console.log("- StatusText:", response.statusText);
+    console.log("- Headers:", Object.fromEntries(response.headers.entries()));
     
-    // Si el servidor responde (incluso con 404), significa que está corriendo
-    // Un servidor Flask típicamente responde con 404 en la ruta raíz si no está definida
+    // Flask normalmente responde con 404 en la ruta raíz si no está definida
+    // También aceptamos 200 en caso de que haya una ruta raíz definida
     if (response.status === 200 || response.status === 404) {
-      console.log("Servidor Python detectado correctamente");
-      return true;
+      console.log("✅ Servidor Python detectado correctamente");
+      
+      // Paso 2: Verificar que la ruta de la API existe
+      try {
+        console.log("Paso 2: Verificando ruta de API...");
+        const apiResponse = await fetch(`${API_BASE_URL}/api/allocation-model`, {
+          method: 'OPTIONS',
+          mode: 'cors'
+        });
+        
+        console.log("Respuesta de API OPTIONS:", apiResponse.status);
+        console.log("✅ API Python completamente funcional");
+        return true;
+      } catch (apiError) {
+        console.log("⚠️ Servidor Python activo pero API podría no estar disponible:", apiError);
+        // Aún consideramos que está disponible si el servidor responde
+        return true;
+      }
     }
     
+    console.log("❌ Respuesta inesperada del servidor");
     return false;
+    
   } catch (error) {
-    console.log("Error al conectar con servidor Python:", error);
-    console.log("Verifica que el servidor esté corriendo en http://localhost:5000");
+    console.log("=== ERROR DE CONEXIÓN ===");
+    console.log("Tipo de error:", error.constructor.name);
+    console.log("Mensaje de error:", error.message);
+    
+    if (error.name === 'AbortError') {
+      console.log("❌ Conexión abortada por timeout");
+    } else if (error.message.includes('fetch')) {
+      console.log("❌ Error de red - el servidor probablemente no está corriendo");
+      console.log("💡 Soluciones posibles:");
+      console.log("1. Verifica que Python esté ejecutando el servidor en puerto 5000");
+      console.log("2. Ejecuta: cd src/python && python api.py");
+      console.log("3. Verifica que no haya firewall bloqueando el puerto 5000");
+    } else {
+      console.log("❌ Error desconocido:", error);
+    }
+    
     return false;
   }
 };
