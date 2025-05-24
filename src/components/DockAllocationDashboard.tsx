@@ -75,23 +75,32 @@ const DockAllocationDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Test de conexión Python más directo
+        // Test de conexión Python
         console.log("🔍 Verificando servidor Python...");
         const pythonAvailable = await testPythonApiConnection();
         console.log("🐍 Estado del servidor Python:", pythonAvailable ? "✅ DISPONIBLE" : "❌ NO DISPONIBLE");
         setIsPythonModelAvailable(pythonAvailable);
         
         if (!pythonAvailable) {
-          console.log("⚠️ ATENCIÓN: SERVIDOR PYTHON NO DETECTADO");
-          console.log("📋 INSTRUCCIONES PARA EJECUTAR:");
-          console.log("1. Terminal: cd src/python/");
-          console.log("2. Instalar: pip install -r requirements.txt");
-          console.log("3. Ejecutar: python api.py");
-          console.log("4. Verificar mensaje: 'Running on http://127.0.0.1:5000'");
-          console.log("5. Mantener terminal abierto mientras usas la aplicación");
+          console.log("⚠️ SERVIDOR PYTHON NO DETECTADO");
+          console.log("📋 PARA EJECUTAR EL SERVIDOR PYTHON:");
+          console.log("1. Abre terminal/cmd en la carpeta del proyecto");
+          console.log("2. cd src/python/");
+          console.log("3. pip install -r requirements.txt");
+          console.log("4. python api.py");
+          console.log("5. Debe mostrar: 'Running on http://127.0.0.1:5000'");
+          console.log("6. Deja la terminal abierta");
         }
         
-        const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
+        const [shipsData, docksData, allocationsData, weather] = await Promise.all([
+          getShips(), 
+          getDocks(), 
+          getAllocations(), 
+          fetchWeatherData()
+        ]);
+        
+        setShips(shipsData);
+        setAllocations(allocationsData);
         
         const initialWeatherData = {
           ...weather,
@@ -129,29 +138,24 @@ const DockAllocationDashboard = () => {
   const handleRunAllocationModel = async () => {
     console.log("🚀 INICIANDO PROCESO DE ASIGNACIÓN");
     
-    // Re-verificar conexión Python antes de proceder
-    console.log("🔄 Verificando conexión Python nuevamente...");
+    // Re-verificar conexión Python
     const pythonAvailable = await testPythonApiConnection();
     setIsPythonModelAvailable(pythonAvailable);
     
     if (!pythonAvailable) {
-      console.log("❌ FALLO: Servidor Python no disponible");
       toast({
         title: "❌ Servidor Python Requerido",
-        description: "El servidor Python no está corriendo. Ejecuta 'python api.py' en la carpeta src/python/ y vuelve a intentar.",
+        description: "El servidor Python no está corriendo. Ejecuta 'python api.py' en src/python/ y vuelve a intentar.",
         variant: "destructive",
-        duration: 8000
+        duration: 10000
       });
-      setActiveTab("allocation");
       return;
     }
 
-    console.log("✅ Servidor Python confirmado, ejecutando modelo...");
     setIsLoading(true);
     setWeatherWarning(false);
     
     try {
-      console.log("Limpiando asignaciones anteriores...");
       setAllocations([]);
       
       const clearedDocks = docks.map(dock => ({
@@ -173,16 +177,7 @@ const DockAllocationDashboard = () => {
         }
       };
 
-      if (weatherData) {
-        weatherData.settings = {
-          maxWindSpeed: windSpeedLimit,
-          minTideLevel: tideLevelLimit
-        };
-      }
-
-      console.log("📤 Enviando parámetros al modelo Python:", modelParams);
       const result = await runAllocationModel(modelParams);
-      console.log("📥 Resultado recibido del modelo Python:", result);
       
       if (result.weatherWarning) {
         setWeatherWarning(true);
@@ -199,71 +194,21 @@ const DockAllocationDashboard = () => {
         const updatedDocks = await updateDockStatus(result.allocations);
         setDocks(updatedDocks);
         
-        if (result.unassignedShips && result.unassignedShips.length > 0) {
-          toast({
-            title: "Asignación Completada Parcialmente",
-            description: `${result.allocations.length} buques asignados. ${result.unassignedShips.length} buques no pudieron ser asignados.`,
-            variant: "default"
-          });
-        } else {
-          toast({
-            title: "Asignación Completada",
-            description: `${result.allocations.length} buques asignados con éxito`,
-            variant: "default"
-          });
-        }
-
-        if (result.unassignedShips && result.unassignedShips.length > 0) {
-          setActiveTab("allocation");
-        } else {
-          setActiveTab("dashboard");
-        }
-      }
-
-      if (result.unassignedShips && result.unassignedShips.length > 0) {
-        const unassignedContent = <div className="space-y-4">
-            <h3 className="font-medium text-lg text-red-600">Buques No Asignados:</h3>
-            {result.unassignedShips.map(({
-            ship,
-            reason
-          }) => <div key={ship.id} className="p-4 border rounded-md bg-red-50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium">{ship.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Llegada: {new Date(ship.arrivalTime).toLocaleString('es-ES')}
-                    </p>
-                  </div>
-                  <div className="text-sm text-red-600">
-                    Razón: {reason}
-                  </div>
-                </div>
-              </div>)}
-          </div>;
         toast({
-          title: "Detalles de Buques No Asignados",
-          description: unassignedContent,
-          duration: 10000
+          title: "Asignación Completada",
+          description: `${result.allocations.length} buques asignados con éxito`,
+          variant: "default"
         });
+
+        setActiveTab("dashboard");
       }
     } catch (error) {
       console.error("❌ Error en modelo de asignación:", error);
-      const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      
-      let userFriendlyMessage = "";
-      if (errorMessage.includes("Failed to fetch") || errorMessage.includes("fetch")) {
-        userFriendlyMessage = "No se puede conectar al servidor Python. Asegúrate de que esté corriendo:\n\n1. cd src/python/\n2. python api.py\n3. Debe mostrar: 'Running on http://127.0.0.1:5000'";
-      } else if (errorMessage.includes("ECONNREFUSED")) {
-        userFriendlyMessage = "Conexión rechazada. El servidor Python no está escuchando en el puerto 5000.";
-      } else {
-        userFriendlyMessage = errorMessage.split('\n')[0];
-      }
-      
       toast({
         title: "Error del Modelo Python",
-        description: userFriendlyMessage,
+        description: error instanceof Error ? error.message : "Error desconocido",
         variant: "destructive",
-        duration: 10000
+        duration: 15000
       });
     } finally {
       setIsLoading(false);

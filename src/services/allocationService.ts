@@ -139,23 +139,7 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
     return result;
   } catch (error) {
     console.error("❌ Error ejecutando modelo Python:", error);
-    
-    // Proporcionar error más específico
-    const errorMessage = `FALLO EN CONEXIÓN CON SERVIDOR PYTHON
-
-El modelo de optimización requiere que el servidor Python esté ejecutándose.
-
-PASOS PARA SOLUCIONAR:
-1. Abre una terminal
-2. Navega a la carpeta del proyecto: cd src/python/
-3. Instala dependencias: pip install -r requirements.txt
-4. Ejecuta el servidor: python api.py
-5. Verifica que aparezca: "Running on http://127.0.0.1:5000"
-6. Deja el servidor corriendo y vuelve a intentar
-
-Error técnico: ${error instanceof Error ? error.message : 'Error desconocido'}`;
-    
-    throw new Error(errorMessage);
+    throw error;
   }
 };
 
