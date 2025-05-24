@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
 import { testPythonApiConnection } from "@/services/pythonModelService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import WeatherStatusCard from "@/components/WeatherStatusCard";
 import AllocationStatusCard from "@/components/AllocationStatusCard";
+
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [ships, setShips] = useState<Ship[]>([]);
@@ -73,7 +74,6 @@ const DockAllocationDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Comprobar si el modelo Python está disponible
         const pythonAvailable = await testPythonApiConnection();
         setIsPythonModelAvailable(pythonAvailable);
         
@@ -117,23 +117,37 @@ const DockAllocationDashboard = () => {
     setIsLoading(true);
     setWeatherWarning(false);
     try {
+      console.log("Limpiando asignaciones anteriores...");
+      setAllocations([]);
+      
+      const clearedDocks = docks.map(dock => ({
+        ...dock,
+        occupied: false,
+        occupiedBy: undefined,
+        occupiedUntil: undefined
+      }));
+      setDocks(clearedDocks);
+
       const modelParams = {
         ships,
-        docks,
-        existingAllocations: allocations,
+        docks: clearedDocks,
+        existingAllocations: [], // Siempre empezar con lista vacía
         optimizationCriteria,
         weatherSettings: {
           maxWindSpeed: windSpeedLimit,
           minTideLevel: tideLevelLimit
         }
       };
+
       if (weatherData) {
         weatherData.settings = {
           maxWindSpeed: windSpeedLimit,
           minTideLevel: tideLevelLimit
         };
       }
+
       const result = await runAllocationModel(modelParams);
+      
       if (result.weatherWarning) {
         setWeatherWarning(true);
         setWeatherData(result.weatherData || null);
@@ -143,10 +157,12 @@ const DockAllocationDashboard = () => {
           variant: "default"
         });
       } else {
-        setAllocations(prev => [...prev, ...result.allocations]);
+        setAllocations(result.allocations);
         setWeatherData(result.weatherData || null);
-        const updatedDocks = await updateDockStatus([...allocations, ...result.allocations]);
+        
+        const updatedDocks = await updateDockStatus(result.allocations);
         setDocks(updatedDocks);
+        
         if (result.unassignedShips && result.unassignedShips.length > 0) {
           toast({
             title: "Asignación Completada Parcialmente",
@@ -160,12 +176,14 @@ const DockAllocationDashboard = () => {
             variant: "default"
           });
         }
+
         if (result.unassignedShips && result.unassignedShips.length > 0) {
           setActiveTab("allocation");
         } else {
           setActiveTab("dashboard");
         }
       }
+
       if (result.unassignedShips && result.unassignedShips.length > 0) {
         const unassignedContent = <div className="space-y-4">
             <h3 className="font-medium text-lg text-red-600">Buques No Asignados:</h3>
@@ -433,8 +451,24 @@ const DockAllocationDashboard = () => {
               <Button variant="outline" onClick={() => setActiveTab("ships")}>
                 Agregar Más Buques
               </Button>
-              <Button onClick={handleRunAllocationModel} disabled={isLoading} variant="marine" size="xl" className="transition-all font-bold transform hover:scale-105">
-                {isLoading ? "Procesando..." : "Ejecutar Modelo de Asignación"}
+              <Button 
+                onClick={handleRunAllocationModel} 
+                disabled={isLoading} 
+                variant="marine" 
+                size="xl" 
+                className="transition-all font-bold transform hover:scale-105 flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="h-5 w-5 animate-spin" />
+                    Optimizando...
+                  </>
+                ) : (
+                  <>
+                    <BrainCircuitIcon className="h-5 w-5" />
+                    {allocations.length > 0 ? 'Nueva Optimización' : 'Ejecutar Modelo de Asignación'}
+                  </>
+                )}
               </Button>
             </CardFooter>
           </Card>
@@ -580,4 +614,5 @@ const DockAllocationDashboard = () => {
       </Tabs>
     </div>;
 };
+
 export default DockAllocationDashboard;
