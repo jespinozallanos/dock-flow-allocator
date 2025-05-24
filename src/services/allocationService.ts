@@ -1,7 +1,6 @@
-
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
-import { runPythonAllocationModel, testPythonApiConnection } from '@/services/pythonModelService';
+import { runPythonAllocationModel } from '@/services/pythonModelService';
 
 // Function to fetch real-time weather data for Talcahuano, Chile
 export const fetchWeatherData = async (): Promise<WeatherData> => {
@@ -117,8 +116,12 @@ const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
 
 // Modelo de asignación usando SOLO el modelo Python
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
+  console.log("🎯 INICIANDO MODELO DE ASIGNACIÓN");
+  console.log("📊 Parámetros recibidos:", params);
+  
   // Get weather data
   const weatherData = await fetchWeatherData();
+  console.log("🌤️ Datos meteorológicos obtenidos:", weatherData);
   
   // Ensure we properly set the weather data settings before running the model
   if (params.weatherSettings) {
@@ -126,25 +129,31 @@ export const runAllocationModel = async (params: PythonModelParams): Promise<Pyt
       maxWindSpeed: params.weatherSettings.maxWindSpeed,
       minTideLevel: params.weatherSettings.minTideLevel
     };
+    console.log("⚙️ Configuración meteorológica actualizada:", weatherData.settings);
   }
   
   try {
-    console.log("Ejecutando modelo matemático Python...");
-    return await runPythonAllocationModel(params, weatherData);
+    console.log("🐍 Llamando al modelo Python...");
+    const result = await runPythonAllocationModel(params, weatherData);
+    console.log("✅ Resultado obtenido del modelo Python:", result);
+    return result;
   } catch (error) {
-    console.error("Error con el modelo Python:", error);
+    console.error("❌ Error ejecutando modelo Python:", error);
     
-    // Crear un error específico que incluya instrucciones para el usuario
-    const errorMessage = `No se pudo conectar con el servidor Python. 
+    // Proporcionar error más específico
+    const errorMessage = `FALLO EN CONEXIÓN CON SERVIDOR PYTHON
 
-Para ejecutar el modelo de optimización:
-1. Asegúrate de que Python esté instalado
-2. Navega a la carpeta src/python/
+El modelo de optimización requiere que el servidor Python esté ejecutándose.
+
+PASOS PARA SOLUCIONAR:
+1. Abre una terminal
+2. Navega a la carpeta del proyecto: cd src/python/
 3. Instala dependencias: pip install -r requirements.txt
 4. Ejecuta el servidor: python api.py
-5. El servidor debe estar corriendo en http://localhost:5000
+5. Verifica que aparezca: "Running on http://127.0.0.1:5000"
+6. Deja el servidor corriendo y vuelve a intentar
 
-Error original: ${error instanceof Error ? error.message : 'Error desconocido'}`;
+Error técnico: ${error instanceof Error ? error.message : 'Error desconocido'}`;
     
     throw new Error(errorMessage);
   }

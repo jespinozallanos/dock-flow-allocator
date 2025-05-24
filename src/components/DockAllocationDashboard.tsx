@@ -75,26 +75,23 @@ const DockAllocationDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Intentar detectar si Python está disponible con más intentos
-        console.log("🔍 Verificando disponibilidad del servidor Python...");
+        // Test de conexión Python más directo
+        console.log("🔍 Verificando servidor Python...");
         const pythonAvailable = await testPythonApiConnection();
-        console.log("📊 Estado final del servidor Python:", pythonAvailable ? "✅ Disponible" : "❌ No disponible");
+        console.log("🐍 Estado del servidor Python:", pythonAvailable ? "✅ DISPONIBLE" : "❌ NO DISPONIBLE");
         setIsPythonModelAvailable(pythonAvailable);
         
         if (!pythonAvailable) {
-          console.log("⚠️ ATENCIÓN: El servidor Python no está disponible.");
-          console.log("Para ejecutar el servidor Python:");
-          console.log("1. Abre una terminal");
-          console.log("2. Navega a: cd src/python/");
-          console.log("3. Instala dependencias: pip install -r requirements.txt");
-          console.log("4. Ejecuta el servidor: python api.py");
-          console.log("5. Verifica que aparezca: 'Running on http://127.0.0.1:5000'");
+          console.log("⚠️ ATENCIÓN: SERVIDOR PYTHON NO DETECTADO");
+          console.log("📋 INSTRUCCIONES PARA EJECUTAR:");
+          console.log("1. Terminal: cd src/python/");
+          console.log("2. Instalar: pip install -r requirements.txt");
+          console.log("3. Ejecutar: python api.py");
+          console.log("4. Verificar mensaje: 'Running on http://127.0.0.1:5000'");
+          console.log("5. Mantener terminal abierto mientras usas la aplicación");
         }
         
         const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
-        setShips(shipsData);
-        setDocks(docksData);
-        setAllocations(allocationsData);
         
         const initialWeatherData = {
           ...weather,
@@ -114,7 +111,7 @@ const DockAllocationDashboard = () => {
         console.error("❌ Error loading data:", error);
         toast({
           title: "Error",
-          description: "Error al cargar datos",
+          description: "Error al cargar datos del sistema",
           variant: "destructive"
         });
       } finally {
@@ -130,25 +127,26 @@ const DockAllocationDashboard = () => {
   };
 
   const handleRunAllocationModel = async () => {
-    console.log("🚀 Iniciando proceso de asignación...");
+    console.log("🚀 INICIANDO PROCESO DE ASIGNACIÓN");
     
-    // Verificar nuevamente la conexión antes de ejecutar
-    console.log("🔄 Re-verificando conexión con Python...");
+    // Re-verificar conexión Python antes de proceder
+    console.log("🔄 Verificando conexión Python nuevamente...");
     const pythonAvailable = await testPythonApiConnection();
     setIsPythonModelAvailable(pythonAvailable);
     
     if (!pythonAvailable) {
-      console.log("❌ No se puede ejecutar: Servidor Python no disponible");
+      console.log("❌ FALLO: Servidor Python no disponible");
       toast({
-        title: "Servidor Python No Disponible",
-        description: "No se puede conectar al servidor Python. Verifica que esté corriendo en http://localhost:5000",
-        variant: "destructive"
+        title: "❌ Servidor Python Requerido",
+        description: "El servidor Python no está corriendo. Ejecuta 'python api.py' en la carpeta src/python/ y vuelve a intentar.",
+        variant: "destructive",
+        duration: 8000
       });
       setActiveTab("allocation");
       return;
     }
 
-    console.log("✅ Servidor Python disponible, procediendo con asignación...");
+    console.log("✅ Servidor Python confirmado, ejecutando modelo...");
     setIsLoading(true);
     setWeatherWarning(false);
     
@@ -249,7 +247,7 @@ const DockAllocationDashboard = () => {
         });
       }
     } catch (error) {
-      console.error("❌ Error running allocation model:", error);
+      console.error("❌ Error en modelo de asignación:", error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
       
       let userFriendlyMessage = "";
