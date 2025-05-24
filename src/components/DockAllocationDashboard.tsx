@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
 import { testPythonApiConnection } from "@/services/pythonModelService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw, AlertTriangle } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
@@ -30,10 +30,11 @@ const DockAllocationDashboard = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherWarning, setWeatherWarning] = useState(false);
   const [isPythonModelAvailable, setIsPythonModelAvailable] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [windSpeedLimit, setWindSpeedLimit] = useState(8.0);
   const [tideLevelLimit, setTideLevelLimit] = useState(3.0);
-
   const handleWindSpeedChange = (value: number[]) => {
     setWindSpeedLimit(value[0]);
     if (weatherData) {
@@ -51,7 +52,6 @@ const DockAllocationDashboard = () => {
       });
     }
   };
-
   const handleTideLevelChange = (value: number[]) => {
     setTideLevelLimit(value[0]);
     if (weatherData) {
@@ -69,37 +69,17 @@ const DockAllocationDashboard = () => {
       });
     }
   };
-
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         
-        // Test de conexión Python
-        console.log("🔍 Verificando servidor Python...");
         const pythonAvailable = await testPythonApiConnection();
-        console.log("🐍 Estado del servidor Python:", pythonAvailable ? "✅ DISPONIBLE" : "❌ NO DISPONIBLE");
         setIsPythonModelAvailable(pythonAvailable);
         
-        if (!pythonAvailable) {
-          console.log("⚠️ SERVIDOR PYTHON NO DETECTADO");
-          console.log("📋 PARA EJECUTAR EL SERVIDOR PYTHON:");
-          console.log("1. Abre terminal/cmd en la carpeta del proyecto");
-          console.log("2. cd src/python/");
-          console.log("3. pip install -r requirements.txt");
-          console.log("4. python api.py");
-          console.log("5. Debe mostrar: 'Running on http://127.0.0.1:5000'");
-          console.log("6. Deja la terminal abierta");
-        }
-        
-        const [shipsData, docksData, allocationsData, weather] = await Promise.all([
-          getShips(), 
-          getDocks(), 
-          getAllocations(), 
-          fetchWeatherData()
-        ]);
-        
+        const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
         setShips(shipsData);
+        setDocks(docksData);
         setAllocations(allocationsData);
         
         const initialWeatherData = {
@@ -117,10 +97,10 @@ const DockAllocationDashboard = () => {
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
       } catch (error) {
-        console.error("❌ Error loading data:", error);
+        console.error("Error loading data:", error);
         toast({
           title: "Error",
-          description: "Error al cargar datos del sistema",
+          description: "Error al cargar datos",
           variant: "destructive"
         });
       } finally {
@@ -129,33 +109,15 @@ const DockAllocationDashboard = () => {
     };
     loadData();
   }, [toast]);
-
   const handleShipAdded = async (ship: Ship) => {
     setShips(prev => [...prev, ship]);
     setActiveTab("ships");
   };
-
   const handleRunAllocationModel = async () => {
-    console.log("🚀 INICIANDO PROCESO DE ASIGNACIÓN");
-    
-    // Re-verificar conexión Python
-    const pythonAvailable = await testPythonApiConnection();
-    setIsPythonModelAvailable(pythonAvailable);
-    
-    if (!pythonAvailable) {
-      toast({
-        title: "❌ Servidor Python Requerido",
-        description: "El servidor Python no está corriendo. Ejecuta 'python api.py' en src/python/ y vuelve a intentar.",
-        variant: "destructive",
-        duration: 10000
-      });
-      return;
-    }
-
     setIsLoading(true);
     setWeatherWarning(false);
-    
     try {
+      console.log("Limpiando asignaciones anteriores...");
       setAllocations([]);
       
       const clearedDocks = docks.map(dock => ({
@@ -169,13 +131,20 @@ const DockAllocationDashboard = () => {
       const modelParams = {
         ships,
         docks: clearedDocks,
-        existingAllocations: [],
+        existingAllocations: [], // Siempre empezar con lista vacía
         optimizationCriteria,
         weatherSettings: {
           maxWindSpeed: windSpeedLimit,
           minTideLevel: tideLevelLimit
         }
       };
+
+      if (weatherData) {
+        weatherData.settings = {
+          maxWindSpeed: windSpeedLimit,
+          minTideLevel: tideLevelLimit
+        };
+      }
 
       const result = await runAllocationModel(modelParams);
       
@@ -194,27 +163,64 @@ const DockAllocationDashboard = () => {
         const updatedDocks = await updateDockStatus(result.allocations);
         setDocks(updatedDocks);
         
-        toast({
-          title: "Asignación Completada",
-          description: `${result.allocations.length} buques asignados con éxito`,
-          variant: "default"
-        });
+        if (result.unassignedShips && result.unassignedShips.length > 0) {
+          toast({
+            title: "Asignación Completada Parcialmente",
+            description: `${result.allocations.length} buques asignados. ${result.unassignedShips.length} buques no pudieron ser asignados.`,
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Asignación Completada",
+            description: `${result.allocations.length} buques asignados con éxito`,
+            variant: "default"
+          });
+        }
 
-        setActiveTab("dashboard");
+        if (result.unassignedShips && result.unassignedShips.length > 0) {
+          setActiveTab("allocation");
+        } else {
+          setActiveTab("dashboard");
+        }
+      }
+
+      if (result.unassignedShips && result.unassignedShips.length > 0) {
+        const unassignedContent = <div className="space-y-4">
+            <h3 className="font-medium text-lg text-red-600">Buques No Asignados:</h3>
+            {result.unassignedShips.map(({
+            ship,
+            reason
+          }) => <div key={ship.id} className="p-4 border rounded-md bg-red-50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{ship.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Llegada: {new Date(ship.arrivalTime).toLocaleString('es-ES')}
+                    </p>
+                  </div>
+                  <div className="text-sm text-red-600">
+                    Razón: {reason}
+                  </div>
+                </div>
+              </div>)}
+          </div>;
+        toast({
+          title: "Detalles de Buques No Asignados",
+          description: unassignedContent,
+          duration: 10000
+        });
       }
     } catch (error) {
-      console.error("❌ Error en modelo de asignación:", error);
+      console.error("Error running allocation model:", error);
       toast({
-        title: "Error del Modelo Python",
-        description: error instanceof Error ? error.message : "Error desconocido",
-        variant: "destructive",
-        duration: 15000
+        title: "Error",
+        description: "Falló al ejecutar el modelo de asignación",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleDockUpdate = (updatedDock: Dock) => {
     setDocks(prev => prev.map(dock => dock.id === updatedDock.id ? updatedDock : dock));
     toast({
@@ -222,7 +228,6 @@ const DockAllocationDashboard = () => {
       description: `${updatedDock.name} ha sido actualizado correctamente`
     });
   };
-
   const handleDeleteShip = async (shipId: string) => {
     try {
       setShips(prev => prev.filter(ship => ship.id !== shipId));
@@ -261,27 +266,19 @@ const DockAllocationDashboard = () => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
   };
-
   const getShipsFromOccupiedString = (occupiedBy: string | undefined) => {
     if (!occupiedBy) return [];
     const shipIds = occupiedBy.split(',');
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
-
-  return (
-    <div className="container py-8 max-w-7xl">
+  return <div className="container py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
-        <p className="text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
-        {isPythonModelAvailable ? (
+        <p className="text-muted-foreground">Optimización de asignación de diques basado en IA</p>
+        {isPythonModelAvailable && (
           <div className="flex items-center gap-2 mt-2 bg-green-100 text-green-800 px-3 py-1 rounded-md border border-green-300 w-fit">
             <BrainCircuitIcon className="h-4 w-4" />
             <span className="text-sm font-medium">Modelo Matemático Python Activo</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 mt-2 bg-red-100 text-red-800 px-3 py-1 rounded-md border border-red-300 w-fit">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm font-medium">Servidor Python No Disponible</span>
           </div>
         )}
       </div>
@@ -386,35 +383,16 @@ const DockAllocationDashboard = () => {
             <CardHeader>
               <CardTitle className="text-marine-DEFAULT">Herramienta de Asignación de Atraques</CardTitle>
               <CardDescription>
-                Ejecuta el modelo de optimización matemática Python para optimizar las asignaciones
+                Ejecuta el modelo de asignación de atraques {isPythonModelAvailable ? 'basado en optimización matemática' : 'basado en simulación'} para optimizar las asignaciones
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {!isPythonModelAvailable && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Servidor Python Requerido</AlertTitle>
-                  <AlertDescription className="space-y-2">
-                    <p>El modelo de optimización requiere el servidor Python. Para ejecutarlo:</p>
-                    <ol className="list-decimal list-inside space-y-1 text-sm">
-                      <li>Asegúrate de que Python esté instalado</li>
-                      <li>Navega a la carpeta <code className="bg-gray-100 px-1 rounded">src/python/</code></li>
-                      <li>Instala dependencias: <code className="bg-gray-100 px-1 rounded">pip install -r requirements.txt</code></li>
-                      <li>Ejecuta el servidor: <code className="bg-gray-100 px-1 rounded">python api.py</code></li>
-                      <li>El servidor debe estar corriendo en <code className="bg-gray-100 px-1 rounded">http://localhost:5000</code></li>
-                    </ol>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {weatherWarning && (
-                <Alert variant="destructive" className="mb-4">
+              {weatherWarning && <Alert variant="destructive" className="mb-4">
                   <AlertTitle>Condiciones climáticas inadecuadas</AlertTitle>
                   <AlertDescription>
                     Las condiciones actuales de marea ({weatherData?.tide.current.toFixed(1)} m) y/o viento ({weatherData?.wind.speed.toFixed(1)} nudos) no permiten la asignación de buques. Se requiere marea mínima de 3m y viento máximo de 8 nudos.
                   </AlertDescription>
-                </Alert>
-              )}
+                </Alert>}
             
               <div className="max-w-md">
                 <label className="text-sm font-medium block mb-2">Criterios de Optimización</label>
@@ -475,7 +453,7 @@ const DockAllocationDashboard = () => {
               </Button>
               <Button 
                 onClick={handleRunAllocationModel} 
-                disabled={isLoading || !isPythonModelAvailable} 
+                disabled={isLoading} 
                 variant="marine" 
                 size="xl" 
                 className="transition-all font-bold transform hover:scale-105 flex items-center gap-2"
@@ -488,7 +466,7 @@ const DockAllocationDashboard = () => {
                 ) : (
                   <>
                     <BrainCircuitIcon className="h-5 w-5" />
-                    {allocations.length > 0 ? 'Nueva Optimización' : 'Ejecutar Modelo de Optimización'}
+                    {allocations.length > 0 ? 'Nueva Optimización' : 'Ejecutar Modelo de Asignación'}
                   </>
                 )}
               </Button>
@@ -634,8 +612,7 @@ const DockAllocationDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
 
 export default DockAllocationDashboard;
