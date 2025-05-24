@@ -58,10 +58,6 @@ def run_allocation_model(params):
         allocated_ship_ids = set([alloc.get('shipId') for alloc in existing_allocations])
         unallocated_ships = [ship for ship in ships if ship.get('id') not in allocated_ship_ids]
         
-        # Obtener ventanas de marea seguras
-        tide_windows = weather_data.get('tide', {}).get('windows', [])
-        safe_windows = [window for window in tide_windows if window.get('isSafe', False)]
-        
         # Si no hay barcos para asignar o no hay diques operativos, retornar resultado vacío
         if not unallocated_ships or not operative_docks:
             return {
@@ -139,11 +135,27 @@ def run_allocation_model(params):
                 if dock_specializations and ship_type not in dock_specializations:
                     model += x[ship_id][dock_id] == 0
         
-        # 3. Capacidad total de los diques (longitud)
+        # 3. RESTRICCIÓN CRÍTICA: Capacidad total de los diques (longitud) considerando asignaciones existentes
         for dock in operative_docks:
             dock_id = dock.get('id')
             dock_length = dock.get('length', 0)
-            model += pulp.lpSum(ship.get('length') * x[ship.get('id')][dock_id] for ship in unallocated_ships) <= dock_length
+            
+            # Calcular espacio ocupado por asignaciones existentes que se superponen temporalmente
+            occupied_length = 0
+            for allocation in existing_allocations:
+                if allocation.get('dockId') == dock_id:
+                    # En un modelo simplificado, asumimos que todas las asignaciones se superponen
+                    # En un modelo más complejo, deberíamos verificar superposición temporal
+                    ship_in_allocation = next((s for s in ships if s.get('id') == allocation.get('shipId')), None)
+                    if ship_in_allocation:
+                        occupied_length += ship_in_allocation.get('length', 0)
+            
+            available_length = dock_length - occupied_length
+            
+            # La suma de las longitudes de los nuevos barcos asignados no debe exceder el espacio disponible
+            model += pulp.lpSum(ship.get('length') * x[ship.get('id')][dock_id] for ship in unallocated_ships) <= available_length
+            
+            print(f"Dock {dock.get('name')}: Total={dock_length}m, Occupied={occupied_length}m, Available={available_length}m")
         
         # Resolver el modelo
         model.solve(pulp.PULP_CBC_CMD(msg=False))
@@ -170,6 +182,7 @@ def run_allocation_model(params):
                         'status': 'scheduled'
                     })
                     assigned = True
+                    print(f"Assigned ship {ship.get('name')} ({ship.get('length')}m) to dock {dock.get('name')}")
                     break
             
             if not assigned:
@@ -177,6 +190,7 @@ def run_allocation_model(params):
                     'ship': ship,
                     'reason': get_failure_reason(ship, operative_docks, weather_data)
                 })
+                print(f"Could not assign ship {ship.get('name')} ({ship.get('length')}m)")
         
         # Calcular métricas
         total_waiting_time = 0  # En un modelo real, esto se calcularía basado en tiempos de espera
@@ -234,8 +248,11 @@ def get_failure_reason(ship, docks, weather_data):
     if not suitable_docks:
         return f"No hay diques disponibles que cumplan con los requisitos (largo: {ship.get('length')}m, calado: {ship.get('draft')}m, tipo: {ship.get('type')})"
     
-    if all(dock.get('occupied', False) for dock in suitable_docks):
-        return "Todos los diques compatibles están ocupados"
+    # Verificar capacidad disponible
+    for dock in suitable_docks:
+        # Simplificado: verificar si el barco cabe en el dique
+        if dock.get('length', 0) >= ship.get('length', 0):
+            return "No hay espacio suficiente en los diques compatibles"
     
     # Default reason
     return "No se pudo asignar por restricciones operativas"

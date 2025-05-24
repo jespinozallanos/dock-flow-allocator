@@ -225,6 +225,25 @@ const DockAllocationDashboard = () => {
       });
     }
   };
+
+  const handleUpdateShip = async (updatedShip: Ship) => {
+    try {
+      setShips(prev => prev.map(ship => 
+        ship.id === updatedShip.id ? updatedShip : ship
+      ));
+      toast({
+        title: "Buque Actualizado",
+        description: `${updatedShip.name} ha sido actualizado correctamente`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al actualizar el buque",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getShipById = (shipId: string | undefined) => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
@@ -318,7 +337,7 @@ const DockAllocationDashboard = () => {
                     <CardDescription>Listado de todos los buques en el sistema</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ShipsTable ships={ships} />
+                    <ShipsTable ships={ships} onUpdateShip={handleUpdateShip} />
                   </CardContent>
                   <CardFooter>
                     <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto">
@@ -373,7 +392,7 @@ const DockAllocationDashboard = () => {
               
               <div className="border rounded-md p-4 bg-muted/50">
                 <h3 className="font-medium mb-2">Buques Pendientes de Asignación</h3>
-                <ShipsTable ships={ships.filter(ship => !allocations.some(a => a.shipId === ship.id))} />
+                <ShipsTable ships={ships.filter(ship => !allocations.some(a => a.shipId === ship.id))} onUpdateShip={handleUpdateShip} />
               </div>
               
               {weatherData?.tide.windows && <div className="border rounded-md p-4 bg-blue-50">
@@ -428,7 +447,7 @@ const DockAllocationDashboard = () => {
               <CardDescription>Agregar y ver buques en el sistema</CardDescription>
             </CardHeader>
             <CardContent>
-              <ShipsTable ships={ships} onDeleteShip={handleDeleteShip} />
+              <ShipsTable ships={ships} onDeleteShip={handleDeleteShip} onUpdateShip={handleUpdateShip} />
             </CardContent>
           </Card>
           

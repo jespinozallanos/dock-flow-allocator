@@ -1,15 +1,18 @@
+
 import { Button } from "@/components/ui/button";
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "@/components/ui/table";
 import { Ship } from "@/types/types";
 import { Trash2 } from "lucide-react";
+import ShipEditModal from "@/components/ShipEditModal";
 
 interface ShipsTableProps {
   ships: Ship[];
   onSelectShip?: (shipId: string) => void;
   onDeleteShip?: (shipId: string) => void;
+  onUpdateShip?: (updatedShip: Ship) => void;
 }
 
-const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip, onDeleteShip }) => {
+const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip, onDeleteShip, onUpdateShip }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', { 
       dateStyle: 'short',
@@ -67,6 +70,12 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip, onDeleteSh
                     >
                       Allocate
                     </Button>
+                  )}
+                  {onUpdateShip && (
+                    <ShipEditModal 
+                      ship={ship} 
+                      onShipUpdate={onUpdateShip}
+                    />
                   )}
                   {onDeleteShip && (
                     <Button

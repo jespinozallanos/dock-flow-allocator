@@ -1,4 +1,3 @@
-
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 import { runPythonAllocationModel, testPythonApiConnection } from '@/services/pythonModelService';
@@ -169,16 +168,56 @@ const isWithinSafeTideWindow = (
 const hasAvailableSpace = (
   dock: Dock, 
   ship: Ship, 
-  allocatedShips: Array<{ship: Ship, allocation: Allocation}>
+  allocatedShips: Array<{ship: Ship, allocation: Allocation}>,
+  proposedStartTime: string,
+  proposedEndTime: string,
+  existingAllocations: Allocation[]
 ): boolean => {
   // If dock is not operational, it can't hold ships
   if (dock.operationalStatus !== 'operativo') return false;
   
-  // Calculate total length of ships already allocated to this dock at the same time
-  const totalLengthAllocated = allocatedShips.reduce((total, item) => total + item.ship.length, 0);
+  const proposedStart = new Date(proposedStartTime).getTime();
+  const proposedEnd = new Date(proposedEndTime).getTime();
+  
+  // Find all ships that will be in this dock during the proposed time period
+  const overlappingAllocations = existingAllocations.filter(allocation => {
+    if (allocation.dockId !== dock.id) return false;
+    
+    const allocStart = new Date(allocation.startTime).getTime();
+    const allocEnd = new Date(allocation.endTime).getTime();
+    
+    // Check if there's time overlap
+    return (proposedStart < allocEnd && proposedEnd > allocStart);
+  });
+  
+  // Calculate total length of ships that will overlap with this proposed allocation
+  let totalOverlapLength = 0;
+  for (const allocation of overlappingAllocations) {
+    const overlappingShip = mockShips.find(s => s.id === allocation.shipId);
+    if (overlappingShip) {
+      totalOverlapLength += overlappingShip.length;
+    }
+  }
+  
+  // Add ships from current allocation session that are not yet in existingAllocations
+  for (const allocatedItem of allocatedShips) {
+    if (allocatedItem.allocation.dockId === dock.id) {
+      const allocStart = new Date(allocatedItem.allocation.startTime).getTime();
+      const allocEnd = new Date(allocatedItem.allocation.endTime).getTime();
+      
+      // Check if there's time overlap
+      if (proposedStart < allocEnd && proposedEnd > allocStart) {
+        totalOverlapLength += allocatedItem.ship.length;
+      }
+    }
+  }
   
   // Check if adding this ship would exceed dock length
-  return (totalLengthAllocated + ship.length) <= dock.length;
+  const availableSpace = dock.length - totalOverlapLength;
+  
+  console.log(`Dock ${dock.name}: Available space = ${availableSpace}m, Ship ${ship.name} needs = ${ship.length}m`);
+  
+  return ship.length <= availableSpace;
 };
 
 // Check if ship is already allocated in the provided time period
@@ -377,7 +416,7 @@ const runSimulationModel = async (params: PythonModelParams, weatherData: Weathe
         
         let allocated = false;
         for (const dock of suitableDocks) {
-          if (hasAvailableSpace(dock, ship, docksAllocation[dock.id])) {
+          if (hasAvailableSpace(dock, ship, docksAllocation[dock.id], proposedStartTime, proposedEndTime, existingAllocations)) {
             const newAllocation = {
               id: Math.random().toString(36).substring(2, 9),
               shipId: ship.id,
@@ -392,15 +431,23 @@ const runSimulationModel = async (params: PythonModelParams, weatherData: Weathe
             docksAllocation[dock.id].push({ ship, allocation: newAllocation });
             allocatedShipIds.add(ship.id);
             allocated = true;
+            
+            console.log(`Assigned ship ${ship.name} (${ship.length}m) to dock ${dock.name}`);
             break;
           }
         }
         
         if (!allocated) {
+          const reason = suitableDocks.length === 0 ? 
+            `No hay diques disponibles que cumplan con los requisitos (largo: ${ship.length}m, calado: ${ship.draft}m, tipo: ${ship.type})` :
+            `No hay espacio suficiente en los diques compatibles`;
+          
           unassignedShips.push({
             ship,
-            reason: getShipAllocationFailureReason(ship, docks, weatherData, ship.arrivalTime, ship.departureTime)
+            reason
           });
+          
+          console.log(`Could not assign ship ${ship.name} (${ship.length}m): ${reason}`);
         }
       }
       
