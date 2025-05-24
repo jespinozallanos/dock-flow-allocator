@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
 import { testPythonApiConnection } from "@/services/pythonModelService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
@@ -30,11 +30,10 @@ const DockAllocationDashboard = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherWarning, setWeatherWarning] = useState(false);
   const [isPythonModelAvailable, setIsPythonModelAvailable] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [windSpeedLimit, setWindSpeedLimit] = useState(8.0);
   const [tideLevelLimit, setTideLevelLimit] = useState(3.0);
+
   const handleWindSpeedChange = (value: number[]) => {
     setWindSpeedLimit(value[0]);
     if (weatherData) {
@@ -52,6 +51,7 @@ const DockAllocationDashboard = () => {
       });
     }
   };
+
   const handleTideLevelChange = (value: number[]) => {
     setTideLevelLimit(value[0]);
     if (weatherData) {
@@ -69,6 +69,7 @@ const DockAllocationDashboard = () => {
       });
     }
   };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -109,11 +110,23 @@ const DockAllocationDashboard = () => {
     };
     loadData();
   }, [toast]);
+
   const handleShipAdded = async (ship: Ship) => {
     setShips(prev => [...prev, ship]);
     setActiveTab("ships");
   };
+
   const handleRunAllocationModel = async () => {
+    if (!isPythonModelAvailable) {
+      toast({
+        title: "Servidor Python No Disponible",
+        description: "El modelo de optimización requiere que el servidor Python esté ejecutándose. Ve a la pestaña de Asignación para más detalles.",
+        variant: "destructive"
+      });
+      setActiveTab("allocation");
+      return;
+    }
+
     setIsLoading(true);
     setWeatherWarning(false);
     try {
@@ -131,7 +144,7 @@ const DockAllocationDashboard = () => {
       const modelParams = {
         ships,
         docks: clearedDocks,
-        existingAllocations: [], // Siempre empezar con lista vacía
+        existingAllocations: [],
         optimizationCriteria,
         weatherSettings: {
           maxWindSpeed: windSpeedLimit,
@@ -212,15 +225,19 @@ const DockAllocationDashboard = () => {
       }
     } catch (error) {
       console.error("Error running allocation model:", error);
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+      
       toast({
-        title: "Error",
-        description: "Falló al ejecutar el modelo de asignación",
-        variant: "destructive"
+        title: "Error del Modelo Python",
+        description: errorMessage.split('\n')[0], // Solo la primera línea para el toast
+        variant: "destructive",
+        duration: 8000
       });
     } finally {
       setIsLoading(false);
     }
   };
+
   const handleDockUpdate = (updatedDock: Dock) => {
     setDocks(prev => prev.map(dock => dock.id === updatedDock.id ? updatedDock : dock));
     toast({
@@ -228,6 +245,7 @@ const DockAllocationDashboard = () => {
       description: `${updatedDock.name} ha sido actualizado correctamente`
     });
   };
+
   const handleDeleteShip = async (shipId: string) => {
     try {
       setShips(prev => prev.filter(ship => ship.id !== shipId));
@@ -266,19 +284,27 @@ const DockAllocationDashboard = () => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
   };
+
   const getShipsFromOccupiedString = (occupiedBy: string | undefined) => {
     if (!occupiedBy) return [];
     const shipIds = occupiedBy.split(',');
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
-  return <div className="container py-8 max-w-7xl">
+
+  return (
+    <div className="container py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
-        <p className="text-muted-foreground">Optimización de asignación de diques basado en IA</p>
-        {isPythonModelAvailable && (
+        <p className="text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
+        {isPythonModelAvailable ? (
           <div className="flex items-center gap-2 mt-2 bg-green-100 text-green-800 px-3 py-1 rounded-md border border-green-300 w-fit">
             <BrainCircuitIcon className="h-4 w-4" />
             <span className="text-sm font-medium">Modelo Matemático Python Activo</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 mt-2 bg-red-100 text-red-800 px-3 py-1 rounded-md border border-red-300 w-fit">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm font-medium">Servidor Python No Disponible</span>
           </div>
         )}
       </div>
@@ -383,16 +409,35 @@ const DockAllocationDashboard = () => {
             <CardHeader>
               <CardTitle className="text-marine-DEFAULT">Herramienta de Asignación de Atraques</CardTitle>
               <CardDescription>
-                Ejecuta el modelo de asignación de atraques {isPythonModelAvailable ? 'basado en optimización matemática' : 'basado en simulación'} para optimizar las asignaciones
+                Ejecuta el modelo de optimización matemática Python para optimizar las asignaciones
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {weatherWarning && <Alert variant="destructive" className="mb-4">
+              {!isPythonModelAvailable && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Servidor Python Requerido</AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <p>El modelo de optimización requiere el servidor Python. Para ejecutarlo:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-sm">
+                      <li>Asegúrate de que Python esté instalado</li>
+                      <li>Navega a la carpeta <code className="bg-gray-100 px-1 rounded">src/python/</code></li>
+                      <li>Instala dependencias: <code className="bg-gray-100 px-1 rounded">pip install -r requirements.txt</code></li>
+                      <li>Ejecuta el servidor: <code className="bg-gray-100 px-1 rounded">python api.py</code></li>
+                      <li>El servidor debe estar corriendo en <code className="bg-gray-100 px-1 rounded">http://localhost:5000</code></li>
+                    </ol>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {weatherWarning && (
+                <Alert variant="destructive" className="mb-4">
                   <AlertTitle>Condiciones climáticas inadecuadas</AlertTitle>
                   <AlertDescription>
                     Las condiciones actuales de marea ({weatherData?.tide.current.toFixed(1)} m) y/o viento ({weatherData?.wind.speed.toFixed(1)} nudos) no permiten la asignación de buques. Se requiere marea mínima de 3m y viento máximo de 8 nudos.
                   </AlertDescription>
-                </Alert>}
+                </Alert>
+              )}
             
               <div className="max-w-md">
                 <label className="text-sm font-medium block mb-2">Criterios de Optimización</label>
@@ -453,7 +498,7 @@ const DockAllocationDashboard = () => {
               </Button>
               <Button 
                 onClick={handleRunAllocationModel} 
-                disabled={isLoading} 
+                disabled={isLoading || !isPythonModelAvailable} 
                 variant="marine" 
                 size="xl" 
                 className="transition-all font-bold transform hover:scale-105 flex items-center gap-2"
@@ -466,7 +511,7 @@ const DockAllocationDashboard = () => {
                 ) : (
                   <>
                     <BrainCircuitIcon className="h-5 w-5" />
-                    {allocations.length > 0 ? 'Nueva Optimización' : 'Ejecutar Modelo de Asignación'}
+                    {allocations.length > 0 ? 'Nueva Optimización' : 'Ejecutar Modelo de Optimización'}
                   </>
                 )}
               </Button>
@@ -612,7 +657,8 @@ const DockAllocationDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>;
+    </div>
+  );
 };
 
 export default DockAllocationDashboard;
