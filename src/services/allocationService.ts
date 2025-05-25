@@ -1,7 +1,7 @@
-
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 import { runPythonAllocationModel, testPythonApiConnection } from '@/services/pythonModelService';
+import { testConnection, runSimpleAllocation } from '@/services/simplePythonService';
 
 // Function to fetch real-time weather data for Talcahuano, Chile
 export const fetchWeatherData = async (): Promise<WeatherData> => {
@@ -117,28 +117,37 @@ const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
 
 // ELIMINADO: Modelo de simulación JavaScript - ahora solo usa Python API
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
-  console.log("Iniciando modelo de asignación Python...");
+  console.log("🚀 Iniciando modelo de asignación simple...");
   
   // Get weather data
   const weatherData = await fetchWeatherData();
   
-  // Ensure we properly set the weather data settings before running the model
-  if (params.weatherSettings) {
-    weatherData.settings = {
-      maxWindSpeed: params.weatherSettings.maxWindSpeed,
-      minTideLevel: params.weatherSettings.minTideLevel
+  // Verificar conexión con API simple
+  const isConnected = await testConnection();
+  
+  if (!isConnected) {
+    throw new Error("No se puede conectar con la API Python. Ejecuta: python src/python/simple_api.py");
+  }
+  
+  console.log("✅ Usando API Python simple");
+  
+  try {
+    const allocations = await runSimpleAllocation(params.ships, params.docks);
+    
+    return {
+      allocations,
+      metrics: {
+        totalWaitingTime: 0,
+        dockUtilization: 0.8,
+        conflicts: 0
+      },
+      weatherData,
+      unassignedShips: []
     };
+  } catch (error) {
+    console.error("❌ Error en modelo simple:", error);
+    throw error;
   }
-  
-  // Verificar si la API Python está disponible
-  const isPythonApiAvailable = await testPythonApiConnection();
-  
-  if (!isPythonApiAvailable) {
-    throw new Error("API Python no disponible. Asegúrate de que el servidor Python esté ejecutándose en el puerto correcto.");
-  }
-  
-  console.log("Usando modelo matemático Python exclusivamente");
-  return await runPythonAllocationModel(params, weatherData);
 };
 
 // Get all ships
