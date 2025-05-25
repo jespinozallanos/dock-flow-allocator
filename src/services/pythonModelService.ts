@@ -5,44 +5,39 @@ import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherDa
 const getPythonApiBaseUrl = (): string => {
   const hostname = window.location.hostname;
   const port = window.location.port;
-  const protocol = window.location.protocol;
   
-  console.log(`🔍 Detectando entorno de ejecución:`);
-  console.log(`  - hostname: "${hostname}"`);
-  console.log(`  - port: "${port}"`);
-  console.log(`  - protocol: "${protocol}"`);
-  console.log(`  - full URL: "${window.location.href}"`);
+  console.log(`Detectando entorno - hostname: ${hostname}, port: ${port}`);
   
-  // 1. GitHub Codespaces
-  if (hostname.includes('github.dev') || hostname.includes('githubpreview.dev') || hostname.includes('codespaces.githubusercontent.com')) {
-    const pythonUrl = `https://${hostname.replace('-8080', '-5000')}`;
-    console.log(`✅ Entorno GitHub Codespaces detectado`);
-    console.log(`📡 URL de la API Python: ${pythonUrl}`);
+  // Si estamos en GitHub Codespaces
+  if (hostname.includes('github.dev') || hostname.includes('githubpreview.dev') || hostname.includes('codespaces')) {
+    const pythonUrl = `https://${hostname.replace('-5173', '-5000')}`;
+    console.log(`Entorno Codespaces detectado - URL Python: ${pythonUrl}`);
     return pythonUrl;
   }
   
-  // 2. Lovable (entorno remoto - Python no disponible)
+  // Si estamos en Lovable (para pruebas)
   if (hostname.includes('lovableproject.com')) {
-    console.log(`❌ Entorno Lovable (remoto) detectado`);
-    console.log(`❌ API Python no disponible en entorno Lovable (remoto)`);
-    return 'http://localhost:5000'; // Fallback que fallará intencionalmente
+    console.log('Entorno Lovable detectado - usando localhost:5000');
+    return 'http://localhost:5000';
   }
   
-  // 3. Entorno local - SIEMPRE usar localhost:5000 para Python
-  const pythonUrl = `http://localhost:5000`;
-  console.log(`✅ ENTORNO LOCAL DETECTADO`);
-  console.log(`📍 Frontend corriendo en: ${hostname}:${port}`);
-  console.log(`📍 API Python configurada para: ${pythonUrl}`);
-  console.log(`🔧 CONFIGURACIÓN DETECTADA:`);
-  console.log(`   • Frontend: ${window.location.href}`);
-  console.log(`   • Python API: ${pythonUrl}`);
-  console.log(`   • Protocolo frontend: ${protocol}`);
-  console.log(`   • Puerto frontend: ${port}`);
-  return pythonUrl;
+  // Si estamos en un entorno de desarrollo local (localhost o 127.0.0.1)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const pythonUrl = `http://${hostname}:5000`;
+    console.log(`Entorno local detectado - URL Python: ${pythonUrl}`);
+    return pythonUrl;
+  }
+  
+  // Para cualquier otro entorno, asumir localhost
+  const defaultUrl = 'http://localhost:5000';
+  console.log(`Entorno desconocido (${hostname}) - usando URL por defecto: ${defaultUrl}`);
+  return defaultUrl;
 };
 
 /**
  * Ejecuta el modelo de optimización Python
+ * @param params Parámetros para el modelo
+ * @returns Resultado del modelo de optimización
  */
 export const runPythonAllocationModel = async (
   params: PythonModelParams,
@@ -51,14 +46,16 @@ export const runPythonAllocationModel = async (
   const API_BASE_URL = getPythonApiBaseUrl();
   
   try {
-    console.log("🚀 Enviando datos al modelo Python en:", API_BASE_URL);
-    console.log("📊 Parámetros del modelo:", params);
+    console.log("Enviando datos al modelo Python en:", API_BASE_URL);
+    console.log("Parámetros del modelo:", params);
     
+    // Crear el cuerpo de la solicitud
     const requestBody = {
       ...params,
       weatherData
     };
     
+    // Llamar a la API Python
     const response = await fetch(`${API_BASE_URL}/api/allocation-model`, {
       method: 'POST',
       headers: {
@@ -72,9 +69,12 @@ export const runPythonAllocationModel = async (
       throw new Error(`Error en la llamada a la API Python: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
+    // Convertir respuesta a JSON
     const result: PythonModelResult = await response.json();
-    console.log("✅ Resultado del modelo Python recibido:", result);
+    console.log("Resultado del modelo Python:", result);
     
+    // Verificar y corregir el formato de los resultados
+    // Asegurarse de que todas las fechas estén en formato ISO
     if (result.allocations) {
       result.allocations = result.allocations.map(allocation => ({
         ...allocation,
@@ -86,107 +86,76 @@ export const runPythonAllocationModel = async (
     
     return result;
   } catch (error) {
-    console.error("❌ Error al ejecutar el modelo Python:", error);
+    console.error("Error al ejecutar el modelo Python:", error);
     throw error;
   }
 };
 
 /**
- * Función mejorada para probar la conexión a la API Python
+ * Función de utilidad que permite probar la conexión a la API Python
  */
 export const testPythonApiConnection = async (): Promise<boolean> => {
   const API_BASE_URL = getPythonApiBaseUrl();
   
   try {
-    console.log("🔍 PROBANDO CONEXIÓN CON API PYTHON");
-    console.log(`📡 URL objetivo: ${API_BASE_URL}/api/health`);
-    console.log(`🌐 Entorno actual: ${window.location.href}`);
+    console.log("🔍 Probando conexión con API Python en:", API_BASE_URL);
+    console.log("🌐 Información del entorno:");
+    console.log("  - hostname:", window.location.hostname);
+    console.log("  - port:", window.location.port);
+    console.log("  - protocol:", window.location.protocol);
+    console.log("  - full URL:", window.location.href);
     
-    // Detectar si estamos en Lovable (entorno remoto)
-    if (window.location.hostname.includes('lovableproject.com')) {
-      console.log("❌ API Python no disponible en entorno Lovable (remoto)");
-      return false;
-    }
-    
-    console.log("📡 Enviando petición de health check...");
-    const startTime = Date.now();
-    
-    // Configurar timeout más largo y mejores headers para entorno local
+    // Intentamos hacer una petición simple para ver si la API está disponible
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.log("⏰ Timeout de conexión (20 segundos)");
-      console.log("💡 El servidor Python podría no estar respondiendo");
+      console.log("⏰ Timeout de conexión alcanzado (10 segundos)");
       controller.abort();
-    }, 20000);
+    }, 10000); // 10 segundos de timeout para localhost
     
+    console.log("📡 Enviando petición de health check...");
     const response = await fetch(`${API_BASE_URL}/api/health`, {
       method: 'GET',
       signal: controller.signal,
-      mode: 'cors',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
+      mode: 'cors' // Asegurar que las peticiones CORS funcionen
     });
     
-    const endTime = Date.now();
-    const responseTime = endTime - startTime;
     clearTimeout(timeoutId);
+    const isAvailable = response.ok;
     
-    console.log(`⏱️ Tiempo de respuesta: ${responseTime}ms`);
-    console.log(`📄 Status de respuesta: ${response.status}`);
-    
-    if (response.ok) {
+    if (isAvailable) {
       const healthData = await response.json();
-      console.log("✅ ¡API PYTHON CONECTADA EXITOSAMENTE!");
-      console.log("📊 Datos del servidor:", healthData);
-      console.log("🎉 Conexión establecida correctamente");
-      return true;
+      console.log("✅ API Python DISPONIBLE en", API_BASE_URL);
+      console.log("📊 Información del servidor Python:", healthData);
     } else {
-      console.log("❌ API Python respondió con error");
-      console.log(`📄 Status: ${response.status} ${response.statusText}`);
-      
-      try {
-        const responseText = await response.text();
-        console.log("📄 Respuesta:", responseText);
-      } catch (e) {
-        console.log("📄 No se pudo leer la respuesta");
-      }
-      
-      return false;
+      console.log("❌ API Python NO DISPONIBLE en", API_BASE_URL);
+      console.log("📄 Response status:", response.status);
+      console.log("📄 Response statusText:", response.statusText);
     }
     
+    return isAvailable;
   } catch (error) {
-    console.error("❌ ERROR DE CONEXIÓN CON API PYTHON:", error);
+    console.error("❌ Error al conectar con API Python:", error);
     
+    // Proporcionar información más detallada del error
     if (error instanceof Error) {
-      console.log("🔍 ANÁLISIS DEL ERROR:");
-      console.log(`   • Tipo: ${error.name}`);
-      console.log(`   • Mensaje: ${error.message}`);
-      
       if (error.name === 'AbortError') {
-        console.log("⏰ TIMEOUT - El servidor no respondió a tiempo");
-        console.log("💡 SOLUCIÓN:");
-        console.log("   1. Verifica que el servidor Python esté ejecutándose");
-        console.log("   2. Revisa que esté en puerto 5000");
-        console.log("   3. Accede manualmente a: http://localhost:5000/api/health");
-      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        console.log("🔗 ERROR DE RED - No se puede conectar");
-        console.log("💡 CAUSAS POSIBLES:");
-        console.log("   1. ❌ Servidor Python NO ejecutándose");
-        console.log("   2. ❌ Puerto 5000 bloqueado o ocupado");
-        console.log("   3. ❌ Problema de CORS");
-        console.log("   4. ❌ Firewall bloqueando conexión");
-        
-        console.log("");
-        console.log("🚀 VERIFICACIÓN PASO A PASO:");
-        console.log("   1. En PowerShell: cd src/python && python api.py");
-        console.log("   2. Debe mostrar: 'Running on http://127.0.0.1:5000'");
-        console.log("   3. En navegador: http://localhost:5000/api/health");
-        console.log("   4. Debe responder con JSON de estado");
-        console.log("   5. Si funciona manualmente, recarga esta página");
+        console.log("⏰ La conexión fue cancelada por timeout");
+      } else if (error.message.includes('Failed to fetch')) {
+        console.log("🔗 Error de red - no se puede conectar con el servidor");
+        console.log("🔧 Posibles causas:");
+        console.log("   1. El servidor Python NO está ejecutándose");
+        console.log("   2. El servidor Python está en un puerto diferente");
+        console.log("   3. Firewall o antivirus bloqueando la conexión");
+        console.log("   4. CORS no configurado correctamente");
       }
     }
+    
+    console.log("🚀 Para ejecutar el servidor Python:");
+    console.log("   1. Abre una terminal en VS Code");
+    console.log("   2. Navega a la carpeta: cd src/python");
+    console.log("   3. Instala dependencias: pip install -r requirements.txt");
+    console.log("   4. Ejecuta el servidor: python api.py");
+    console.log("   5. Verifica que aparezca: 'Running on http://0.0.0.0:5000'");
     
     return false;
   }

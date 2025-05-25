@@ -1,3 +1,4 @@
+
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 import { runPythonAllocationModel, testPythonApiConnection } from '@/services/pythonModelService';
@@ -114,29 +115,30 @@ const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
   return windows;
 };
 
-// Usar el modelo Python original
+// ELIMINADO: Modelo de simulación JavaScript - ahora solo usa Python API
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
-  console.log("🚀 Iniciando modelo de asignación Python...");
+  console.log("Iniciando modelo de asignación Python...");
   
   // Get weather data
   const weatherData = await fetchWeatherData();
   
-  // Verificar conexión con API Python
-  const isConnected = await testPythonApiConnection();
-  
-  if (!isConnected) {
-    throw new Error("No se puede conectar con la API Python. Ejecuta: python src/python/api.py");
+  // Ensure we properly set the weather data settings before running the model
+  if (params.weatherSettings) {
+    weatherData.settings = {
+      maxWindSpeed: params.weatherSettings.maxWindSpeed,
+      minTideLevel: params.weatherSettings.minTideLevel
+    };
   }
   
-  console.log("✅ Usando API Python original");
+  // Verificar si la API Python está disponible
+  const isPythonApiAvailable = await testPythonApiConnection();
   
-  try {
-    const result = await runPythonAllocationModel(params, weatherData);
-    return result;
-  } catch (error) {
-    console.error("❌ Error en modelo Python:", error);
-    throw error;
+  if (!isPythonApiAvailable) {
+    throw new Error("API Python no disponible. Asegúrate de que el servidor Python esté ejecutándose en el puerto correcto.");
   }
+  
+  console.log("Usando modelo matemático Python exclusivamente");
+  return await runPythonAllocationModel(params, weatherData);
 };
 
 // Get all ships
