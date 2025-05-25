@@ -3,19 +3,25 @@ import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherDa
 
 // Función para detectar la URL base del API Python según el entorno
 const getPythonApiBaseUrl = (): string => {
+  const hostname = window.location.hostname;
+  
   // Si estamos en GitHub Codespaces
-  if (window.location.hostname.includes('github.dev') || window.location.hostname.includes('githubpreview.dev')) {
-    const hostname = window.location.hostname;
+  if (hostname.includes('github.dev') || hostname.includes('githubpreview.dev') || hostname.includes('codespaces')) {
     // Reemplazar el puerto 5173 (Vite) por 5000 (Python) manteniendo el mismo hostname
     return `https://${hostname.replace('-5173', '-5000')}`;
   }
   
-  // Si estamos en un entorno de desarrollo local
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Si estamos en Lovable (para pruebas)
+  if (hostname.includes('lovableproject.com')) {
     return 'http://localhost:5000';
   }
   
-  // Para otros entornos, asumir localhost
+  // Si estamos en un entorno de desarrollo local (localhost o 127.0.0.1)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:5000';
+  }
+  
+  // Para cualquier otro entorno, asumir localhost
   return 'http://localhost:5000';
 };
 
@@ -87,11 +93,12 @@ export const testPythonApiConnection = async (): Promise<boolean> => {
     
     // Intentamos hacer una petición simple para ver si la API está disponible
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos de timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout para entornos locales
     
     const response = await fetch(`${API_BASE_URL}/api/health`, {
       method: 'GET',
-      signal: controller.signal
+      signal: controller.signal,
+      mode: 'cors' // Asegurar que las peticiones CORS funcionen
     });
     
     clearTimeout(timeoutId);
@@ -101,6 +108,8 @@ export const testPythonApiConnection = async (): Promise<boolean> => {
     return isAvailable;
   } catch (error) {
     console.error("Error al conectar con API Python:", error);
+    console.log("Asegúrate de que el servidor Python esté ejecutándose en el puerto 5000");
+    console.log("Para ejecutar el servidor Python, usa: cd src/python && python api.py");
     return false;
   }
 };
