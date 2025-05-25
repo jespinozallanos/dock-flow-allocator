@@ -1,7 +1,6 @@
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData, TideWindow } from '@/types/types';
 import { mockShips, mockDocks, mockAllocations } from '@/data/mockData';
 import { runPythonAllocationModel, testPythonApiConnection } from '@/services/pythonModelService';
-import { testConnection, runSimpleAllocation } from '@/services/simplePythonService';
 
 // Function to fetch real-time weather data for Talcahuano, Chile
 export const fetchWeatherData = async (): Promise<WeatherData> => {
@@ -115,37 +114,27 @@ const generateTideWindows = (minimumTideLevel: number): TideWindow[] => {
   return windows;
 };
 
-// ELIMINADO: Modelo de simulación JavaScript - ahora solo usa Python API
+// Usar el modelo Python original
 export const runAllocationModel = async (params: PythonModelParams): Promise<PythonModelResult> => {
-  console.log("🚀 Iniciando modelo de asignación simple...");
+  console.log("🚀 Iniciando modelo de asignación Python...");
   
   // Get weather data
   const weatherData = await fetchWeatherData();
   
-  // Verificar conexión con API simple
-  const isConnected = await testConnection();
+  // Verificar conexión con API Python
+  const isConnected = await testPythonApiConnection();
   
   if (!isConnected) {
-    throw new Error("No se puede conectar con la API Python. Ejecuta: python src/python/simple_api.py");
+    throw new Error("No se puede conectar con la API Python. Ejecuta: python src/python/api.py");
   }
   
-  console.log("✅ Usando API Python simple");
+  console.log("✅ Usando API Python original");
   
   try {
-    const allocations = await runSimpleAllocation(params.ships, params.docks);
-    
-    return {
-      allocations,
-      metrics: {
-        totalWaitingTime: 0,
-        dockUtilization: 0.8,
-        conflicts: 0
-      },
-      weatherData,
-      unassignedShips: []
-    };
+    const result = await runPythonAllocationModel(params, weatherData);
+    return result;
   } catch (error) {
-    console.error("❌ Error en modelo simple:", error);
+    console.error("❌ Error en modelo Python:", error);
     throw error;
   }
 };

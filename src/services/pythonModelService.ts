@@ -15,7 +15,7 @@ const getPythonApiBaseUrl = (): string => {
   
   // 1. GitHub Codespaces
   if (hostname.includes('github.dev') || hostname.includes('githubpreview.dev') || hostname.includes('codespaces.githubusercontent.com')) {
-    const pythonUrl = `https://${hostname.replace('-5173', '-5000')}`;
+    const pythonUrl = `https://${hostname.replace('-8080', '-5000')}`;
     console.log(`✅ Entorno GitHub Codespaces detectado`);
     console.log(`📡 URL de la API Python: ${pythonUrl}`);
     return pythonUrl;
@@ -28,25 +28,17 @@ const getPythonApiBaseUrl = (): string => {
     return 'http://localhost:5000'; // Fallback que fallará intencionalmente
   }
   
-  // 3. Entorno local mejorado - DETECCIÓN ESPECÍFICA PARA TU CASO
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    const pythonUrl = `http://localhost:5000`; // Siempre usar localhost:5000 para Python
-    console.log(`✅ ENTORNO LOCAL DETECTADO`);
-    console.log(`📍 Frontend corriendo en: ${hostname}:${port}`);
-    console.log(`📍 API Python configurada para: ${pythonUrl}`);
-    console.log(`🔧 CONFIGURACIÓN DETECTADA:`);
-    console.log(`   • Frontend: ${window.location.href}`);
-    console.log(`   • Python API: ${pythonUrl}`);
-    console.log(`   • Protocolo frontend: ${protocol}`);
-    console.log(`   • Puerto frontend: ${port}`);
-    return pythonUrl;
-  }
-  
-  // 4. Cualquier otro entorno - asumir local
-  console.log(`⚠️ Entorno desconocido (${hostname}) - asumiendo local`);
-  const defaultUrl = 'http://localhost:5000';
-  console.log(`📡 URL de la API Python: ${defaultUrl}`);
-  return defaultUrl;
+  // 3. Entorno local - SIEMPRE usar localhost:5000 para Python
+  const pythonUrl = `http://localhost:5000`;
+  console.log(`✅ ENTORNO LOCAL DETECTADO`);
+  console.log(`📍 Frontend corriendo en: ${hostname}:${port}`);
+  console.log(`📍 API Python configurada para: ${pythonUrl}`);
+  console.log(`🔧 CONFIGURACIÓN DETECTADA:`);
+  console.log(`   • Frontend: ${window.location.href}`);
+  console.log(`   • Python API: ${pythonUrl}`);
+  console.log(`   • Protocolo frontend: ${protocol}`);
+  console.log(`   • Puerto frontend: ${port}`);
+  return pythonUrl;
 };
 
 /**
