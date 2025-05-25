@@ -9,6 +9,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    strictPort: true, // No cambiar puerto automáticamente
+    open: false, // No abrir navegador automáticamente
   },
   plugins: [
     react(),
