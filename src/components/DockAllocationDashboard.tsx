@@ -74,10 +74,20 @@ const DockAllocationDashboard = () => {
       try {
         setIsLoading(true);
         
+        // Verificar disponibilidad de la API Python (REQUERIDA)
         const pythonAvailable = await testPythonApiConnection();
         setIsPythonModelAvailable(pythonAvailable);
         
+        if (!pythonAvailable) {
+          toast({
+            title: "Error de Conexión",
+            description: "No se puede conectar con la API Python. Asegúrate de que el servidor Python esté ejecutándose.",
+            variant: "destructive"
+          });
+        }
+        
         const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
+        
         setShips(shipsData);
         setDocks(docksData);
         setAllocations(allocationsData);
@@ -116,7 +126,19 @@ const DockAllocationDashboard = () => {
   const handleRunAllocationModel = async () => {
     setIsLoading(true);
     setWeatherWarning(false);
+    
     try {
+      // Verificar que la API Python esté disponible antes de proceder
+      const pythonAvailable = await testPythonApiConnection();
+      if (!pythonAvailable) {
+        toast({
+          title: "Error de Conexión",
+          description: "No se puede conectar con la API Python. Asegúrate de que el servidor Python esté ejecutándose en el puerto 5000.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       console.log("Limpiando asignaciones anteriores...");
       setAllocations([]);
       
@@ -212,9 +234,19 @@ const DockAllocationDashboard = () => {
       }
     } catch (error) {
       console.error("Error running allocation model:", error);
+      let errorMessage = "Error desconocido al ejecutar el modelo";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+          errorMessage = "No se puede conectar con la API Python. Verifica que el servidor esté ejecutándose.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: "Falló al ejecutar el modelo de asignación",
+        title: "Error del Modelo Python",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -274,11 +306,16 @@ const DockAllocationDashboard = () => {
   return <div className="container py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
-        <p className="text-muted-foreground">Optimización de asignación de diques basado en IA</p>
-        {isPythonModelAvailable && (
+        <p className="text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
+        {isPythonModelAvailable ? (
           <div className="flex items-center gap-2 mt-2 bg-green-100 text-green-800 px-3 py-1 rounded-md border border-green-300 w-fit">
             <BrainCircuitIcon className="h-4 w-4" />
-            <span className="text-sm font-medium">Modelo Matemático Python Activo</span>
+            <span className="text-sm font-medium">Modelo Matemático Python Conectado</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 mt-2 bg-red-100 text-red-800 px-3 py-1 rounded-md border border-red-300 w-fit">
+            <BrainCircuitIcon className="h-4 w-4" />
+            <span className="text-sm font-medium">Modelo Python No Disponible - Verifica la conexión</span>
           </div>
         )}
       </div>

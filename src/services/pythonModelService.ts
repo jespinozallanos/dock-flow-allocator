@@ -1,8 +1,23 @@
 
 import { Ship, Dock, Allocation, PythonModelParams, PythonModelResult, WeatherData } from '@/types/types';
 
-// URL base de la API Python
-const API_BASE_URL = 'http://localhost:5000';
+// Función para detectar la URL base del API Python según el entorno
+const getPythonApiBaseUrl = (): string => {
+  // Si estamos en GitHub Codespaces
+  if (window.location.hostname.includes('github.dev') || window.location.hostname.includes('githubpreview.dev')) {
+    const hostname = window.location.hostname;
+    // Reemplazar el puerto 5173 (Vite) por 5000 (Python) manteniendo el mismo hostname
+    return `https://${hostname.replace('-5173', '-5000')}`;
+  }
+  
+  // Si estamos en un entorno de desarrollo local
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000';
+  }
+  
+  // Para otros entornos, asumir localhost
+  return 'http://localhost:5000';
+};
 
 /**
  * Ejecuta el modelo de optimización Python
@@ -13,8 +28,11 @@ export const runPythonAllocationModel = async (
   params: PythonModelParams,
   weatherData: WeatherData
 ): Promise<PythonModelResult> => {
+  const API_BASE_URL = getPythonApiBaseUrl();
+  
   try {
-    console.log("Enviando datos al modelo Python...", params);
+    console.log("Enviando datos al modelo Python en:", API_BASE_URL);
+    console.log("Parámetros del modelo:", params);
     
     // Crear el cuerpo de la solicitud
     const requestBody = {
@@ -33,7 +51,7 @@ export const runPythonAllocationModel = async (
     
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Error en la llamada a la API: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`Error en la llamada a la API Python: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
     // Convertir respuesta a JSON
@@ -62,20 +80,27 @@ export const runPythonAllocationModel = async (
  * Función de utilidad que permite probar la conexión a la API Python
  */
 export const testPythonApiConnection = async (): Promise<boolean> => {
+  const API_BASE_URL = getPythonApiBaseUrl();
+  
   try {
+    console.log("Probando conexión con API Python en:", API_BASE_URL);
+    
     // Intentamos hacer una petición simple para ver si la API está disponible
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 segundo de timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos de timeout
     
-    const response = await fetch(`${API_BASE_URL}/api/allocation-model`, {
-      method: 'HEAD',
+    const response = await fetch(`${API_BASE_URL}/api/health`, {
+      method: 'GET',
       signal: controller.signal
     });
     
     clearTimeout(timeoutId);
-    return response.ok;
+    const isAvailable = response.ok;
+    
+    console.log(`API Python ${isAvailable ? 'DISPONIBLE' : 'NO DISPONIBLE'} en ${API_BASE_URL}`);
+    return isAvailable;
   } catch (error) {
-    console.log("API Python no disponible. Se usará el modelo de simulación.");
+    console.error("Error al conectar con API Python:", error);
     return false;
   }
 };
