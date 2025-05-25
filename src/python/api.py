@@ -13,6 +13,8 @@ app = Flask(__name__)
 CORS(app, origins=[
     "http://localhost:5173",
     "http://127.0.0.1:5173", 
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
     "https://*.github.dev",
     "https://*.githubpreview.dev",
     "https://*.codespaces.githubusercontent.com",
@@ -27,8 +29,18 @@ def health_check():
         'service': 'dock-allocation-api',
         'message': 'API Python funcionando correctamente',
         'python_version': sys.version,
-        'working_directory': os.getcwd()
+        'working_directory': os.getcwd(),
+        'environment': detect_environment()
     })
+
+def detect_environment():
+    """Detecta si estamos en Codespaces o localhost"""
+    if os.environ.get('CODESPACES') == 'true':
+        return 'GitHub Codespaces'
+    elif os.environ.get('GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN'):
+        return 'GitHub Codespaces'
+    else:
+        return 'Localhost'
 
 @app.route('/api/allocation-model', methods=['POST'])
 def allocation_model():
@@ -71,20 +83,34 @@ def internal_error(error):
     }), 500
 
 if __name__ == '__main__':
-    print("=" * 50)
+    # Detectar entorno
+    environment = detect_environment()
+    port = int(os.environ.get('PORT', 5000))
+    
+    print("=" * 60)
     print("Iniciando API Python para modelo de asignación de diques...")
-    print("Endpoint de salud: /api/health")
-    print("Endpoint del modelo: /api/allocation-model")
-    print("Puerto: 5000")
-    print("Para conectar desde el frontend, asegúrate de que esté ejecutándose en:")
-    print("- Localhost: http://localhost:5000")
-    print("- Codespaces: automáticamente detectado")
-    print("=" * 50)
+    print(f"Entorno detectado: {environment}")
+    print("Endpoints disponibles:")
+    print("  - GET  /api/health")
+    print("  - POST /api/allocation-model")
+    print(f"Puerto: {port}")
+    
+    if environment == 'GitHub Codespaces':
+        print("🔗 Configuración para GitHub Codespaces:")
+        print(f"  - Puerto interno: {port}")
+        print(f"  - CORS habilitado para dominios de Codespaces")
+        print(f"  - El puerto será automáticamente expuesto por Codespaces")
+    else:
+        print("🏠 Configuración para Localhost:")
+        print(f"  - URL: http://localhost:{port}")
+        print(f"  - Frontend puede conectarse desde http://localhost:5173 o http://localhost:8080")
+    
+    print("=" * 60)
     
     # Configurar el servidor para que funcione tanto en localhost como en Codespaces
     app.run(
         host='0.0.0.0',  # Permitir conexiones desde cualquier IP
-        port=5000, 
+        port=port, 
         debug=True,
         threaded=True  # Permitir múltiples peticiones simultáneas
     )
