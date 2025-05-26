@@ -303,7 +303,8 @@ const DockAllocationDashboard = () => {
     const shipIds = occupiedBy.split(',');
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
-  return <div className="container py-8 max-w-7xl">
+  return (
+    <div className="container py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
         <p className="text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
@@ -370,7 +371,12 @@ const DockAllocationDashboard = () => {
               </CardContent>
             </Card>
             
-            <AllocationStatusCard allocations={allocations} onViewAllocations={() => setActiveTab("allocation")} />
+            <AllocationStatusCard 
+              allocations={allocations} 
+              ships={ships}
+              docks={docks}
+              onViewAllocations={() => setActiveTab("allocation")} 
+            />
           </div>
           
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
@@ -649,7 +655,8 @@ const DockAllocationDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>;
+    </div>
+  );
 };
 
 export default DockAllocationDashboard;
