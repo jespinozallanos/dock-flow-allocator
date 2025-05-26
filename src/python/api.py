@@ -5,6 +5,7 @@ from flask_cors import CORS
 import json
 import sys
 import os
+import socket
 from dock_allocation_model import run_allocation_model
 
 app = Flask(__name__)
@@ -13,13 +14,23 @@ app = Flask(__name__)
 CORS(app, origins=[
     "http://localhost:5173",
     "http://127.0.0.1:5173", 
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
     "https://*.github.dev",
     "https://*.githubpreview.dev",
     "https://*.codespaces.githubusercontent.com",
     "https://*.lovableproject.com"
 ])
+
+def get_local_ip():
+    """Obtener la IP local del sistema"""
+    try:
+        # Conectar a una dirección externa para obtener la IP local
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except:
+        return "No disponible"
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -30,17 +41,9 @@ def health_check():
         'message': 'API Python funcionando correctamente',
         'python_version': sys.version,
         'working_directory': os.getcwd(),
-        'environment': detect_environment()
+        'local_ip': get_local_ip(),
+        'endpoints': ['/api/health', '/api/allocation-model']
     })
-
-def detect_environment():
-    """Detecta si estamos en Codespaces o localhost"""
-    if os.environ.get('CODESPACES') == 'true':
-        return 'GitHub Codespaces'
-    elif os.environ.get('GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN'):
-        return 'GitHub Codespaces'
-    else:
-        return 'Localhost'
 
 @app.route('/api/allocation-model', methods=['POST'])
 def allocation_model():
@@ -83,34 +86,48 @@ def internal_error(error):
     }), 500
 
 if __name__ == '__main__':
-    # Detectar entorno
-    environment = detect_environment()
-    port = int(os.environ.get('PORT', 5000))
-    
     print("=" * 60)
-    print("Iniciando API Python para modelo de asignación de diques...")
-    print(f"Entorno detectado: {environment}")
-    print("Endpoints disponibles:")
-    print("  - GET  /api/health")
-    print("  - POST /api/allocation-model")
-    print(f"Puerto: {port}")
-    
-    if environment == 'GitHub Codespaces':
-        print("🔗 Configuración para GitHub Codespaces:")
-        print(f"  - Puerto interno: {port}")
-        print(f"  - CORS habilitado para dominios de Codespaces")
-        print(f"  - El puerto será automáticamente expuesto por Codespaces")
-    else:
-        print("🏠 Configuración para Localhost:")
-        print(f"  - URL: http://localhost:{port}")
-        print(f"  - Frontend puede conectarse desde http://localhost:5173 o http://localhost:8080")
-    
+    print("🚀 INICIANDO API PYTHON PARA MODELO DE ASIGNACIÓN DE DIQUES")
+    print("=" * 60)
+    print(f"📍 Directorio de trabajo: {os.getcwd()}")
+    print(f"🐍 Versión de Python: {sys.version}")
+    print(f"🌐 IP local del sistema: {get_local_ip()}")
+    print("")
+    print("📡 ENDPOINTS DISPONIBLES:")
+    print("  • Health check: /api/health")
+    print("  • Modelo de asignación: /api/allocation-model")
+    print("")
+    print("🔗 URLS DE ACCESO:")
+    print("  • Localhost: http://localhost:5000")
+    print("  • Localhost (127.0.0.1): http://127.0.0.1:5000")
+    print(f"  • Red local: http://{get_local_ip()}:5000")
+    print("")
+    print("🔧 PARA CONECTAR DESDE EL FRONTEND:")
+    print("  1. Asegúrate de que este servidor esté ejecutándose")
+    print("  2. Ejecuta el frontend con: npm run dev")
+    print("  3. El frontend detectará automáticamente esta API")
+    print("")
+    print("⚠️  SI TIENES PROBLEMAS DE CONEXIÓN:")
+    print("  • Verifica que no haya firewall bloqueando el puerto 5000")
+    print("  • Asegúrate de que ningún otro servicio use el puerto 5000")
+    print("  • Revisa la consola del navegador para errores CORS")
     print("=" * 60)
     
     # Configurar el servidor para que funcione tanto en localhost como en Codespaces
-    app.run(
-        host='0.0.0.0',  # Permitir conexiones desde cualquier IP
-        port=port, 
-        debug=True,
-        threaded=True  # Permitir múltiples peticiones simultáneas
-    )
+    try:
+        app.run(
+            host='0.0.0.0',  # Permitir conexiones desde cualquier IP
+            port=5000, 
+            debug=True,
+            threaded=True  # Permitir múltiples peticiones simultáneas
+        )
+    except OSError as e:
+        if "Address already in use" in str(e):
+            print("❌ ERROR: El puerto 5000 ya está en uso")
+            print("🔧 SOLUCIONES:")
+            print("  1. Cierra cualquier otro servidor en el puerto 5000")
+            print("  2. O usa: sudo lsof -ti:5000 | xargs kill -9")
+            print("  3. Luego vuelve a ejecutar: python api.py")
+        else:
+            print(f"❌ ERROR al iniciar el servidor: {e}")
+        sys.exit(1)

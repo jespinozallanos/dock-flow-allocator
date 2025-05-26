@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Ship, Dock, Allocation, WeatherData } from "@/types/types";
 import DockCard from "@/components/DockCard";
 import ShipsTable from "@/components/ShipsTable";
@@ -30,73 +30,63 @@ const DockAllocationDashboard = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherWarning, setWeatherWarning] = useState(false);
   const [isPythonModelAvailable, setIsPythonModelAvailable] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [windSpeedLimit, setWindSpeedLimit] = useState(8.0);
   const [tideLevelLimit, setTideLevelLimit] = useState(3.0);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  const handleWindSpeedChange = useCallback((value: number[]) => {
+  const handleWindSpeedChange = (value: number[]) => {
     setWindSpeedLimit(value[0]);
     if (weatherData) {
-      setWeatherData(prev => prev ? {
-        ...prev,
+      setWeatherData({
+        ...weatherData,
         wind: {
-          ...prev.wind,
+          ...weatherData.wind,
           maximum: value[0]
         },
         settings: {
-          ...prev.settings,
+          ...weatherData.settings,
           maxWindSpeed: value[0],
           minTideLevel: tideLevelLimit
         }
-      } : null);
+      });
     }
-  }, [weatherData, tideLevelLimit]);
-
-  const handleTideLevelChange = useCallback((value: number[]) => {
+  };
+  const handleTideLevelChange = (value: number[]) => {
     setTideLevelLimit(value[0]);
     if (weatherData) {
-      setWeatherData(prev => prev ? {
-        ...prev,
+      setWeatherData({
+        ...weatherData,
         tide: {
-          ...prev.tide,
+          ...weatherData.tide,
           minimum: value[0]
         },
         settings: {
-          ...prev.settings,
+          ...weatherData.settings,
           minTideLevel: value[0],
           maxWindSpeed: windSpeedLimit
         }
-      } : null);
+      });
     }
-  }, [weatherData, windSpeedLimit]);
-
-  // Separar la carga inicial de datos
+  };
   useEffect(() => {
-    if (isInitialized) return;
-
-    const loadInitialData = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true);
         
-        // Verificar disponibilidad de la API Python solo una vez
+        // Verificar disponibilidad de la API Python (REQUERIDA)
         const pythonAvailable = await testPythonApiConnection();
         setIsPythonModelAvailable(pythonAvailable);
         
         if (!pythonAvailable) {
           toast({
-            title: "Información",
-            description: "API Python no disponible. Verifica que el servidor esté ejecutándose en el puerto 5000.",
-            variant: "default"
+            title: "Error de Conexión",
+            description: "No se puede conectar con la API Python. Asegúrate de que el servidor Python esté ejecutándose.",
+            variant: "destructive"
           });
         }
         
-        const [shipsData, docksData, allocationsData, weather] = await Promise.all([
-          getShips(), 
-          getDocks(), 
-          getAllocations(), 
-          fetchWeatherData()
-        ]);
+        const [shipsData, docksData, allocationsData, weather] = await Promise.all([getShips(), getDocks(), getAllocations(), fetchWeatherData()]);
         
         setShips(shipsData);
         setDocks(docksData);
@@ -116,29 +106,24 @@ const DockAllocationDashboard = () => {
         
         const updatedDocks = await updateDockStatus(allocationsData);
         setDocks(updatedDocks);
-        
-        setIsInitialized(true);
       } catch (error) {
         console.error("Error loading data:", error);
         toast({
           title: "Error",
-          description: "Error al cargar datos iniciales",
+          description: "Error al cargar datos",
           variant: "destructive"
         });
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadInitialData();
-  }, [isInitialized, toast]);
-
-  const handleShipAdded = useCallback(async (ship: Ship) => {
+    loadData();
+  }, [toast]);
+  const handleShipAdded = async (ship: Ship) => {
     setShips(prev => [...prev, ship]);
     setActiveTab("ships");
-  }, []);
-
-  const handleRunAllocationModel = useCallback(async () => {
+  };
+  const handleRunAllocationModel = async () => {
     setIsLoading(true);
     setWeatherWarning(false);
     
@@ -148,7 +133,7 @@ const DockAllocationDashboard = () => {
       if (!pythonAvailable) {
         toast({
           title: "Error de Conexión",
-          description: "No se puede conectar con la API Python. Para Codespaces: asegúrate de que el puerto 5000 esté visible públicamente.",
+          description: "No se puede conectar con la API Python. Asegúrate de que el servidor Python esté ejecutándose en el puerto 5000.",
           variant: "destructive"
         });
         return;
@@ -168,7 +153,7 @@ const DockAllocationDashboard = () => {
       const modelParams = {
         ships,
         docks: clearedDocks,
-        existingAllocations: [],
+        existingAllocations: [], // Siempre empezar con lista vacía
         optimizationCriteria,
         weatherSettings: {
           maxWindSpeed: windSpeedLimit,
@@ -220,13 +205,40 @@ const DockAllocationDashboard = () => {
           setActiveTab("dashboard");
         }
       }
+
+      if (result.unassignedShips && result.unassignedShips.length > 0) {
+        const unassignedContent = <div className="space-y-4">
+            <h3 className="font-medium text-lg text-red-600">Buques No Asignados:</h3>
+            {result.unassignedShips.map(({
+            ship,
+            reason
+          }) => <div key={ship.id} className="p-4 border rounded-md bg-red-50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{ship.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Llegada: {new Date(ship.arrivalTime).toLocaleString('es-ES')}
+                    </p>
+                  </div>
+                  <div className="text-sm text-red-600">
+                    Razón: {reason}
+                  </div>
+                </div>
+              </div>)}
+          </div>;
+        toast({
+          title: "Detalles de Buques No Asignados",
+          description: unassignedContent,
+          duration: 10000
+        });
+      }
     } catch (error) {
       console.error("Error running allocation model:", error);
       let errorMessage = "Error desconocido al ejecutar el modelo";
       
       if (error instanceof Error) {
         if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-          errorMessage = "No se puede conectar con la API Python. Para Codespaces: verifica que el puerto 5000 esté visible públicamente.";
+          errorMessage = "No se puede conectar con la API Python. Verifica que el servidor esté ejecutándose.";
         } else {
           errorMessage = error.message;
         }
@@ -240,17 +252,15 @@ const DockAllocationDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [ships, docks, optimizationCriteria, windSpeedLimit, tideLevelLimit, weatherData, toast]);
-
-  const handleDockUpdate = useCallback((updatedDock: Dock) => {
+  };
+  const handleDockUpdate = (updatedDock: Dock) => {
     setDocks(prev => prev.map(dock => dock.id === updatedDock.id ? updatedDock : dock));
     toast({
       title: "Dique Actualizado",
       description: `${updatedDock.name} ha sido actualizado correctamente`
     });
-  }, [toast]);
-
-  const handleDeleteShip = useCallback(async (shipId: string) => {
+  };
+  const handleDeleteShip = async (shipId: string) => {
     try {
       setShips(prev => prev.filter(ship => ship.id !== shipId));
       toast({
@@ -264,9 +274,9 @@ const DockAllocationDashboard = () => {
         variant: "destructive"
       });
     }
-  }, [toast]);
+  };
 
-  const handleUpdateShip = useCallback(async (updatedShip: Ship) => {
+  const handleUpdateShip = async (updatedShip: Ship) => {
     try {
       setShips(prev => prev.map(ship => 
         ship.id === updatedShip.id ? updatedShip : ship
@@ -282,19 +292,17 @@ const DockAllocationDashboard = () => {
         variant: "destructive"
       });
     }
-  }, [toast]);
+  };
 
-  const getShipById = useCallback((shipId: string | undefined) => {
+  const getShipById = (shipId: string | undefined) => {
     if (!shipId) return undefined;
     return ships.find(s => s.id === shipId);
-  }, [ships]);
-
-  const getShipsFromOccupiedString = useCallback((occupiedBy: string | undefined) => {
+  };
+  const getShipsFromOccupiedString = (occupiedBy: string | undefined) => {
     if (!occupiedBy) return [];
     const shipIds = occupiedBy.split(',');
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
-  }, [getShipById]);
-
+  };
   return <div className="container py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
