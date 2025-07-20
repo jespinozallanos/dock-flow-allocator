@@ -347,58 +347,62 @@ const DockAllocationDashboard = () => {
           </TabsList>
         </div>
         
-        <TabsContent value="dashboard" className="space-y-4">
+        <TabsContent value="dashboard" className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("ships")}>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-base">Buques</CardTitle>
-                <CardDescription className="text-xs">Buques registrados actualmente</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{ships.length}</div>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-20" onClick={() => setActiveTab("ships")}>
+              <CardContent className="p-3 h-full flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-muted-foreground">Buques</div>
+                  <div className="text-lg font-bold">{ships.length}</div>
+                </div>
+                <div className="text-xs text-muted-foreground">registrados</div>
               </CardContent>
             </Card>
             
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("docks")}>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-base">Diques Disponibles</CardTitle>
-                <CardDescription className="text-xs">Listos para asignación</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {docks.filter(dock => !dock.occupied).length} / {docks.length}
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-20" onClick={() => setActiveTab("docks")}>
+              <CardContent className="p-3 h-full flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-muted-foreground">Diques Disponibles</div>
+                  <div className="text-lg font-bold">
+                    {docks.filter(dock => !dock.occupied).length} / {docks.length}
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">listos</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-20" onClick={() => setActiveTab("allocation")}>
+              <CardContent className="p-3 h-full flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-muted-foreground">Asignaciones</div>
+                  <div className="text-lg font-bold">{allocations.length}</div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {allocations.filter(a => a.status === 'completed').length}C {allocations.filter(a => a.status === 'in-progress').length}P {allocations.filter(a => a.status === 'scheduled').length}S
                 </div>
               </CardContent>
             </Card>
-            
-            <AllocationStatusCard 
-              allocations={allocations} 
-              ships={ships}
-              docks={docks}
-              onViewAllocations={() => setActiveTab("allocation")} 
-              className="h-auto"
-            />
           </div>
           
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-            <div className="xl:col-span-3 space-y-4">
-              <Card>
-                <CardHeader className="bg-slate-950 pb-2">
-                  <CardTitle className="text-gray-50 text-lg">Cronograma de Asignación</CardTitle>
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
+            <div className="xl:col-span-3 space-y-3">
+              <Card className="h-80">
+                <CardHeader className="bg-slate-950 pb-1 py-2">
+                  <CardTitle className="text-gray-50 text-base">Cronograma de Asignación</CardTitle>
                   <CardDescription className="text-xs text-gray-300">Vista general de asignaciones programadas</CardDescription>
                 </CardHeader>
-                <CardContent className="p-3">
+                <CardContent className="p-2 h-72 overflow-hidden">
                   <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-marine-DEFAULT text-base">Buques Registrados</CardTitle>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <Card className="h-64">
+                  <CardHeader className="pb-1 py-2">
+                    <CardTitle className="text-marine-DEFAULT text-sm">Buques Registrados</CardTitle>
                     <CardDescription className="text-xs">Listado de todos los buques en el sistema</CardDescription>
                   </CardHeader>
-                  <CardContent className="p-3">
+                  <CardContent className="p-2 h-44 overflow-y-auto">
                     <ShipsTable ships={ships.slice(0, 5)} onUpdateShip={handleUpdateShip} />
                     {ships.length > 5 && (
                       <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -406,35 +410,37 @@ const DockAllocationDashboard = () => {
                       </p>
                     )}
                   </CardContent>
-                  <CardFooter className="pt-2">
-                    <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto text-xs h-8">
+                  <CardFooter className="pt-1 py-2">
+                    <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto text-xs h-6 px-2">
                       Gestionar Buques
                     </Button>
                   </CardFooter>
                 </Card>
 
-                <div className="space-y-3">
-                  {docks.slice(0, 3).map(dock => 
-                    <DockCard 
-                      key={dock.id} 
-                      dock={dock} 
-                      ships={getShipsFromOccupiedString(dock.occupiedBy)}
-                      className="h-auto"
-                    />
+                <div className="space-y-2 h-64 overflow-y-auto">
+                  {docks.slice(0, 4).map(dock => 
+                    <div key={dock.id} className="h-14">
+                      <DockCard 
+                        key={dock.id} 
+                        dock={dock} 
+                        ships={getShipsFromOccupiedString(dock.occupiedBy)}
+                        className="h-14"
+                      />
+                    </div>
                   )}
-                  {docks.length > 3 && (
+                  {docks.length > 4 && (
                     <p className="text-xs text-muted-foreground text-center">
-                      +{docks.length - 3} diques más...
+                      +{docks.length - 4} diques más...
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {weatherData && <WeatherStatusCard weatherData={weatherData} />}
               
-              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} className="mb-3" />}
+              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} className="mb-2" />}
             </div>
           </div>
         </TabsContent>

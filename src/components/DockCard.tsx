@@ -68,75 +68,37 @@ const DockCard: React.FC<DockCardProps> = ({ dock, ships = [], ship, className =
   };
 
   return (
-    <Card className={`${className} dock-hover h-full transition-shadow duration-200 overflow-hidden ${dock.occupied ? 'border-primary' : ''}`}>
-      <CardHeader className="pb-1">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-sm">{dock.name}</CardTitle>
-          <Badge className={`${getStatusColor(dock.operationalStatus)} text-xs px-1 py-0.5`}>
-            {dock.operationalStatus === 'operativo' ? 'OK' : 
-             dock.operationalStatus === 'mantenimiento' ? 'Mant' : 'FS'}
-          </Badge>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="py-2">
-        <div className="text-xs space-y-1">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Dimensiones:</span>
-            <span>{dock.length}m × {dock.depth}m</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Viento/Marea:</span>
-            <span>{dock.maxWindSpeed}kt / {dock.minTideLevel}m</span>
+    <Card className={`${className} dock-hover transition-shadow duration-200 overflow-hidden ${dock.occupied ? 'border-primary' : ''}`}>
+      <CardContent className="p-2 h-full flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-medium text-xs">{dock.name}</span>
+            <Badge className={`${getStatusColor(dock.operationalStatus)} text-xs px-1 py-0 h-4`}>
+              {dock.operationalStatus === 'operativo' ? 'OK' : 
+               dock.operationalStatus === 'mantenimiento' ? 'Mant' : 'FS'}
+            </Badge>
           </div>
           
-          {dock.specializations && dock.specializations.length > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Tipos:</span>
-              <span className="flex gap-0.5">
-                {dock.specializations.slice(0, 2).map((spec, i) => (
-                  <Badge key={i} variant="outline" className="text-xs px-1 py-0">
-                    {spec === 'container' ? 'Cont' : 
-                     spec === 'bulk' ? 'Gran' : 
-                     spec === 'tanker' ? 'Tank' : 'Pas'}
-                  </Badge>
-                ))}
-                {dock.specializations.length > 2 && (
-                  <span className="text-xs text-muted-foreground">+{dock.specializations.length - 2}</span>
-                )}
-              </span>
+          <div className="text-xs text-muted-foreground">
+            {dock.length}m×{dock.depth}m • {dock.maxWindSpeed}kt/{dock.minTideLevel}m
+          </div>
+          
+          {dock.occupied && allShips.length > 0 && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {allShips[0].name} {allShips.length > 1 && `+${allShips.length - 1}`}
             </div>
           )}
         </div>
         
-        {dock.occupied && allShips.length > 0 && (
-          <div className="mt-2 pt-2 border-t">
-            <h4 className="font-medium text-xs mb-1">Buques ({allShips.length})</h4>
-            <div className="space-y-1">
-              {allShips.slice(0, 2).map((ship, index) => (
-                <div key={ship.id} className="flex items-start gap-1">
-                  <ShipIcon className={`h-3 w-3 mt-0.5 ${getShipTypeClass(ship.type)}`} />
-                  <div>
-                    <div className="font-medium text-xs">{ship.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {ship.length}m × {ship.draft}m
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {allShips.length > 2 && (
-                <div className="text-xs text-muted-foreground text-center">
-                  +{allShips.length - 2} más...
-                </div>
-              )}
-              
-              {dock.occupiedUntil && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  Hasta: {formatDate(dock.occupiedUntil)}
-                </div>
-              )}
-            </div>
+        {dock.specializations && dock.specializations.length > 0 && (
+          <div className="flex gap-0.5 ml-2">
+            {dock.specializations.slice(0, 2).map((spec, i) => (
+              <Badge key={i} variant="outline" className="text-xs px-1 py-0 h-4">
+                {spec === 'container' ? 'C' : 
+                 spec === 'bulk' ? 'G' : 
+                 spec === 'tanker' ? 'T' : 'P'}
+              </Badge>
+            ))}
           </div>
         )}
       </CardContent>
