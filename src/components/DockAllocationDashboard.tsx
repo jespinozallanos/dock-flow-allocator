@@ -384,64 +384,22 @@ const DockAllocationDashboard = () => {
             </Card>
           </div>
           
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
-            <div className="xl:col-span-3 space-y-3">
-              <Card className="h-80">
-                <CardHeader className="bg-slate-950 pb-1 py-2">
-                  <CardTitle className="text-gray-50 text-base">Cronograma de Asignación</CardTitle>
-                  <CardDescription className="text-xs text-gray-300">Vista general de asignaciones programadas</CardDescription>
-                </CardHeader>
-                <CardContent className="p-2 h-72 overflow-hidden">
-                  <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <Card className="h-64">
-                  <CardHeader className="pb-1 py-2">
-                    <CardTitle className="text-marine-DEFAULT text-sm">Buques Registrados</CardTitle>
-                    <CardDescription className="text-xs">Listado de todos los buques en el sistema</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-2 h-44 overflow-y-auto">
-                    <ShipsTable ships={ships.slice(0, 5)} onUpdateShip={handleUpdateShip} />
-                    {ships.length > 5 && (
-                      <p className="text-xs text-muted-foreground mt-2 text-center">
-                        +{ships.length - 5} buques más...
-                      </p>
-                    )}
-                  </CardContent>
-                  <CardFooter className="pt-1 py-2">
-                    <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto text-xs h-6 px-2">
-                      Gestionar Buques
-                    </Button>
-                  </CardFooter>
-                </Card>
-
-                <div className="space-y-2 h-64 overflow-y-auto">
-                  {docks.slice(0, 4).map(dock => 
-                    <div key={dock.id} className="h-14">
-                      <DockCard 
-                        key={dock.id} 
-                        dock={dock} 
-                        ships={getShipsFromOccupiedString(dock.occupiedBy)}
-                        className="h-14"
-                      />
-                    </div>
-                  )}
-                  {docks.length > 4 && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      +{docks.length - 4} diques más...
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {weatherData && <WeatherStatusCard weatherData={weatherData} />}
-              
-              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} className="mb-2" />}
-            </div>
+          <div className="space-y-3">
+            <Card className="h-80">
+              <CardHeader className="bg-slate-950 pb-1 py-2">
+                <CardTitle className="text-gray-50 text-base">Cronograma de Asignación</CardTitle>
+                <CardDescription className="text-xs text-gray-300">Vista general de asignaciones programadas</CardDescription>
+              </CardHeader>
+              <CardContent className="p-2 h-72 overflow-hidden">
+                <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            {weatherData && <WeatherStatusCard weatherData={weatherData} />}
+            
+            {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} />}
           </div>
         </TabsContent>
         
