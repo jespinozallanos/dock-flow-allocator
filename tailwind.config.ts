@@ -54,10 +54,10 @@ export default {
 					foreground: 'hsl(var(--card-foreground))'
 				},
 				marine: {
-					DEFAULT: '#0A192F', // Deep navy
-					light: '#172A45',
-					accent: '#64FFDA',
-					water: '#EBF8FF',
+					DEFAULT: 'hsl(207 100% 15%)', // ASMAR navy blue
+					light: 'hsl(207 100% 25%)',
+					accent: 'hsl(210 11% 71%)', // ASMAR gray
+					water: 'hsl(210 11% 96%)',
 				},
 				tide: {
 					safe: '#06B6D4', // Cyan-500
