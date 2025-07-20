@@ -44,21 +44,21 @@ const TideWindowDisplay: React.FC<TideWindowDisplayProps> = ({ tideWindows, clas
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-marine-DEFAULT">Ventanas de Marea</CardTitle>
+      <CardHeader className="pb-1">
+        <CardTitle className="text-marine-DEFAULT text-sm">Ventanas de Marea</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="py-2">
+        <div className="space-y-2">
           {tideWindows.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No hay datos de ventanas de marea disponibles</p>
+            <p className="text-muted-foreground text-center py-2 text-xs">No hay datos de ventanas de marea disponibles</p>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
-              {tideWindows.map((window, index) => {
+            <div className="grid grid-cols-1 gap-2">
+              {tideWindows.slice(0, 3).map((window, index) => {
                 const isCurrent = isCurrentWindow(window);
                 const statusClass = getWindowStatusClass(window, isCurrent);
                 
                 return (
-                  <div key={index} className={`tide-window ${statusClass} relative p-3`}>
+                  <div key={index} className={`tide-window ${statusClass} relative p-2`}>
                     <div className="tide-wave"></div>
                     <div 
                       className="tide-level-indicator"
@@ -67,23 +67,29 @@ const TideWindowDisplay: React.FC<TideWindowDisplayProps> = ({ tideWindows, clas
                     
                     <div className="flex justify-between items-center relative z-10">
                       <div>
-                        <p className="font-semibold">{formatDate(window.start)}</p>
-                        <p className="text-sm">{formatTime(window.start)} - {formatTime(window.end)}</p>
+                        <p className="font-semibold text-xs">{formatDate(window.start)}</p>
+                        <p className="text-xs">{formatTime(window.start)} - {formatTime(window.end)}</p>
                       </div>
                       
                       <div className="text-right">
-                        <span className="inline-block px-2 py-0.5 rounded-full bg-white/20 text-white text-xs">
+                        <span className="inline-block px-1 py-0.5 rounded-full bg-white/20 text-white text-xs">
                           {isCurrent ? 'Actual' : window.isSafe ? 'Seguro' : 'Inseguro'}
                         </span>
                       </div>
                     </div>
                     
-                    <div className="tide-level-text">
+                    <div className="tide-level-text text-xs">
                       {window.level.toFixed(1)}m
                     </div>
                   </div>
                 );
               })}
+              
+              {tideWindows.length > 3 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  +{tideWindows.length - 3} ventanas más...
+                </p>
+              )}
             </div>
           )}
         </div>

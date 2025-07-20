@@ -23,35 +23,35 @@ const WeatherStatusCard: React.FC<WeatherStatusCardProps> = ({
   
   return (
     <Card className={`border-marine-DEFAULT border-opacity-20 bg-gradient-to-r from-marine-DEFAULT/5 to-transparent ${className}`}>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
-          <CloudIcon className="h-5 w-5" />
-          <span>Condiciones Climáticas - {weatherData.location}</span>
+      <CardHeader className="pb-1">
+        <CardTitle className="flex items-center gap-2 text-marine-DEFAULT text-sm">
+          <CloudIcon className="h-4 w-4" />
+          <span>Clima - {weatherData.location}</span>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Actualizado: {formattedDate}
+        <p className="text-xs text-muted-foreground">
+          {formattedDate}
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <div className="flex justify-between items-center mb-4">
+      <CardContent className="space-y-2 py-2">
+        <div className="grid grid-cols-1 gap-3">
+          <div className="bg-white rounded-lg p-2 shadow-sm border">
+            <div className="flex justify-between items-center mb-2">
               <div className="flex items-center">
-                <WavesIcon className="h-5 w-5 text-blue-500 mr-2" />
-                <span className="font-medium text-gray-700">Nivel de Marea</span>
+                <WavesIcon className="h-4 w-4 text-blue-500 mr-1" />
+                <span className="font-medium text-gray-700 text-xs">Marea</span>
               </div>
               
               <div className="flex items-center">
-                <span className="text-2xl font-bold">
+                <span className="text-lg font-bold">
                   {weatherData.tide.current.toFixed(1)}
                 </span>
-                <span className="ml-1 text-gray-500">{weatherData.tide.unit}</span>
+                <span className="ml-1 text-gray-500 text-xs">{weatherData.tide.unit}</span>
               </div>
             </div>
             
-            <div className="flex justify-between text-sm text-gray-500">
+            <div className="flex justify-between text-xs text-gray-500">
               <div>
-                <span>Mínimo requerido:</span>
+                <span>Mín:</span>
                 <span className="ml-1">{weatherData.tide.minimum} {weatherData.tide.unit}</span>
               </div>
               <span className={weatherData.tide.current >= weatherData.tide.minimum ? 'text-tide-safe font-medium' : 'text-tide-danger font-medium'}>
@@ -60,24 +60,24 @@ const WeatherStatusCard: React.FC<WeatherStatusCardProps> = ({
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-white rounded-lg p-2 shadow-sm border">
+            <div className="flex justify-between items-center mb-2">
               <div className="flex items-center">
-                <WindIcon className="h-5 w-5 text-red-500 mr-2" />
-                <span className="font-medium text-gray-700">Velocidad del Viento</span>
+                <WindIcon className="h-4 w-4 text-red-500 mr-1" />
+                <span className="font-medium text-gray-700 text-xs">Viento</span>
               </div>
               
               <div className="flex items-center">
-                <span className={`text-2xl font-bold ${weatherData.wind.speed <= weatherData.wind.maximum ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-lg font-bold ${weatherData.wind.speed <= weatherData.wind.maximum ? 'text-green-600' : 'text-red-600'}`}>
                   {weatherData.wind.speed.toFixed(1)}
                 </span>
-                <span className="ml-1 text-gray-500">{weatherData.wind.unit}</span>
+                <span className="ml-1 text-gray-500 text-xs">{weatherData.wind.unit}</span>
               </div>
             </div>
             
-            <div className="flex justify-between text-sm text-gray-500">
+            <div className="flex justify-between text-xs text-gray-500">
               <div>
-                <span>Máximo permitido:</span>
+                <span>Máx:</span>
                 <span className="ml-1">{weatherData.wind.maximum} {weatherData.wind.unit}</span>
               </div>
               <span className={weatherData.wind.speed <= weatherData.wind.maximum ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
