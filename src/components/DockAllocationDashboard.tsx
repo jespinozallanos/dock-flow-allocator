@@ -19,6 +19,7 @@ import { Slider } from "@/components/ui/slider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import WeatherStatusCard from "@/components/WeatherStatusCard";
 import AllocationStatusCard from "@/components/AllocationStatusCard";
+import DockShipsModal from "@/components/DockShipsModal";
 
 const DockAllocationDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -30,6 +31,8 @@ const DockAllocationDashboard = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherWarning, setWeatherWarning] = useState(false);
   const [isPythonModelAvailable, setIsPythonModelAvailable] = useState(false);
+  const [selectedDock, setSelectedDock] = useState<Dock | null>(null);
+  const [isDockModalOpen, setIsDockModalOpen] = useState(false);
   const {
     toast
   } = useToast();
@@ -303,6 +306,11 @@ const DockAllocationDashboard = () => {
     const shipIds = occupiedBy.split(',');
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
+
+  const handleDockClick = (dock: Dock) => {
+    setSelectedDock(dock);
+    setIsDockModalOpen(true);
+  };
   return (
     <div className="container py-4 max-w-full px-6">
       <div className="mb-6">
@@ -349,7 +357,11 @@ const DockAllocationDashboard = () => {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => window.location.href = '/mapa'}>
               <MapPin className="w-4 h-4 mr-1" />
-              Mapa
+              Mapa 2D
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/mapa-satelital'}>
+              <MapPin className="w-4 h-4 mr-1" />
+              Vista Aérea
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.location.href = '/alertas'}>
               <Bell className="w-4 h-4 mr-1" />
@@ -364,39 +376,79 @@ const DockAllocationDashboard = () => {
         
         <TabsContent value="dashboard" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-24" onClick={() => setActiveTab("ships")}>
-              <CardContent className="p-4 h-full flex items-center justify-between">
-                <div>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("ships")}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
                   <div className="text-sm text-muted-foreground">Buques</div>
-                  <div className="text-2xl font-bold">{ships.length}</div>
+                  <ShipIcon className="h-5 w-5 text-marine-DEFAULT" />
                 </div>
-                <div className="text-sm text-muted-foreground">registrados</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-24" onClick={() => setActiveTab("docks")}>
-              <CardContent className="p-4 h-full flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-muted-foreground">Diques Disponibles</div>
-                  <div className="text-2xl font-bold">
-                    {docks.filter(dock => !dock.occupied).length} / {docks.length}
+                <div className="text-2xl font-bold mb-2">{ships.length}</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span>Contenedor:</span>
+                    <span className="font-medium">{ships.filter(s => s.type === 'container').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Granel:</span>
+                    <span className="font-medium">{ships.filter(s => s.type === 'bulk').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tanquero:</span>
+                    <span className="font-medium">{ships.filter(s => s.type === 'tanker').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pasajeros:</span>
+                    <span className="font-medium">{ships.filter(s => s.type === 'passenger').length}</span>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">listos</div>
               </CardContent>
             </Card>
             
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-24" onClick={() => setActiveTab("allocation")}>
-              <CardContent className="p-4 h-full flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-muted-foreground">Asignaciones</div>
-                  <div className="text-2xl font-bold">{allocations.length}</div>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("docks")}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-muted-foreground">Diques</div>
+                  <DockIcon className="h-5 w-5 text-marine-DEFAULT" />
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <div className="flex gap-2 text-xs">
-                    <span className="text-green-600">{allocations.filter(a => a.status === 'completed').length}C</span>
-                    <span className="text-blue-600">{allocations.filter(a => a.status === 'in-progress').length}P</span>
-                    <span className="text-orange-600">{allocations.filter(a => a.status === 'scheduled').length}S</span>
+                <div className="text-2xl font-bold mb-2">
+                  {docks.filter(dock => !dock.occupied).length} / {docks.length}
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Disponibles:</span>
+                    <span className="font-medium text-green-600">{docks.filter(d => !d.occupied && d.operationalStatus === 'operativo').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Ocupados:</span>
+                    <span className="font-medium text-blue-600">{docks.filter(d => d.occupied).length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Mantenimiento:</span>
+                    <span className="font-medium text-yellow-600">{docks.filter(d => d.operationalStatus === 'mantenimiento').length}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("allocation")}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-muted-foreground">Asignaciones</div>
+                  <TimerIcon className="h-5 w-5 text-marine-DEFAULT" />
+                </div>
+                <div className="text-2xl font-bold mb-2">{allocations.length}</div>
+                <div className="grid grid-cols-3 gap-1 text-xs">
+                  <div className="text-center">
+                    <div className="text-green-600 font-bold">{allocations.filter(a => a.status === 'completed').length}</div>
+                    <div className="text-muted-foreground">Completas</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-blue-600 font-bold">{allocations.filter(a => a.status === 'in-progress').length}</div>
+                    <div className="text-muted-foreground">En Progreso</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-orange-600 font-bold">{allocations.filter(a => a.status === 'scheduled').length}</div>
+                    <div className="text-muted-foreground">Programadas</div>
                   </div>
                 </div>
               </CardContent>
@@ -411,7 +463,13 @@ const DockAllocationDashboard = () => {
                   <CardDescription className="text-sm text-gray-300">Vista general de asignaciones programadas</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
+                  <TimelineView 
+                    allocations={allocations} 
+                    ships={ships} 
+                    docks={docks} 
+                    weatherData={weatherData || undefined}
+                    onDockClick={handleDockClick}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -658,6 +716,14 @@ const DockAllocationDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <DockShipsModal
+        open={isDockModalOpen}
+        onOpenChange={setIsDockModalOpen}
+        dock={selectedDock}
+        ships={ships}
+        allocations={allocations}
+      />
     </div>
   );
 };

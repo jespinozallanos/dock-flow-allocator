@@ -13,6 +13,7 @@ interface TimelineViewProps {
   docks: Dock[];
   weatherData?: WeatherData;
   days?: number;
+  onDockClick?: (dock: Dock) => void;
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({ 
@@ -20,7 +21,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({
   ships, 
   docks, 
   weatherData,
-  days = 5 
+  days = 5,
+  onDockClick 
 }) => {
   const [viewMode, setViewMode] = useState<TimelineViewMode>("week");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -252,9 +254,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                 </thead>
                 <tbody>
                   {docks.map(dock => (
-                    <tr key={dock.id} className="border-t">
+                     <tr key={dock.id} className="border-t">
                       <td className="p-1 text-xs font-medium border-r">
-                        {dock.name}
+                        <button 
+                          onClick={() => onDockClick?.(dock)}
+                          className="text-left hover:text-marine-DEFAULT hover:underline transition-colors"
+                        >
+                          {dock.name}
+                        </button>
                         {dock.operationalStatus !== 'operativo' && (
                           <div className="mt-0.5">
                             <span className={`inline-flex items-center rounded-full px-1 py-0.5 text-xs ${
