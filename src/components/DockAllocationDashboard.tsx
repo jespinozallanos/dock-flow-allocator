@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllocations, getDocks, getShips, runAllocationModel, updateDockStatus, fetchWeatherData } from "@/services/allocationService";
 import { testPythonApiConnection } from "@/services/pythonModelService";
-import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw } from "lucide-react";
+import { AnchorIcon, ShipIcon, TimerIcon, CloudIcon, SettingsIcon, WavesIcon, DockIcon, BrainCircuitIcon, RefreshCw, MapPin, Bell, BarChart3 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
@@ -345,6 +345,21 @@ const DockAllocationDashboard = () => {
               Clima
             </TabsTrigger>
           </TabsList>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/mapa'}>
+              <MapPin className="w-4 h-4 mr-1" />
+              Mapa
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/alertas'}>
+              <Bell className="w-4 h-4 mr-1" />
+              Alertas
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/analytics'}>
+              <BarChart3 className="w-4 h-4 mr-1" />
+              Analytics
+            </Button>
+          </div>
         </div>
         
         <TabsContent value="dashboard" className="space-y-4">
