@@ -304,24 +304,24 @@ const DockAllocationDashboard = () => {
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
   return (
-    <div className="container py-2 max-w-7xl">
-      <div className="mb-4">
-        <h1 className="text-2xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
-        <p className="text-sm text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
+    <div className="container py-4 max-w-full px-6">
+      <div className="mb-6">
+        <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
+        <p className="text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
         {isPythonModelAvailable ? (
-          <div className="flex items-center gap-2 mt-1 bg-green-100 text-green-800 px-2 py-1 rounded-md border border-green-300 w-fit">
-            <BrainCircuitIcon className="h-3 w-3" />
-            <span className="text-xs font-medium">Modelo Matemático Python Conectado</span>
+          <div className="flex items-center gap-2 mt-2 bg-green-100 text-green-800 px-3 py-1 rounded-md border border-green-300 w-fit">
+            <BrainCircuitIcon className="h-4 w-4" />
+            <span className="text-sm font-medium">Modelo Matemático Python Conectado</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 mt-1 bg-red-100 text-red-800 px-2 py-1 rounded-md border border-red-300 w-fit">
-            <BrainCircuitIcon className="h-3 w-3" />
-            <span className="text-xs font-medium">Modelo Python No Disponible - Verifica la conexión</span>
+          <div className="flex items-center gap-2 mt-2 bg-red-100 text-red-800 px-3 py-1 rounded-md border border-red-300 w-fit">
+            <BrainCircuitIcon className="h-4 w-4" />
+            <span className="text-sm font-medium">Modelo Python No Disponible - Verifica la conexión</span>
           </div>
         )}
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex justify-between items-center bg-slate-900">
           <TabsList className="bg-slate-900">
             <TabsTrigger value="dashboard" className="flex items-center gap-1">
@@ -347,59 +347,65 @@ const DockAllocationDashboard = () => {
           </TabsList>
         </div>
         
-        <TabsContent value="dashboard" className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-20" onClick={() => setActiveTab("ships")}>
-              <CardContent className="p-3 h-full flex items-center justify-between">
+        <TabsContent value="dashboard" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-24" onClick={() => setActiveTab("ships")}>
+              <CardContent className="p-4 h-full flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">Buques</div>
-                  <div className="text-lg font-bold">{ships.length}</div>
+                  <div className="text-sm text-muted-foreground">Buques</div>
+                  <div className="text-2xl font-bold">{ships.length}</div>
                 </div>
-                <div className="text-xs text-muted-foreground">registrados</div>
+                <div className="text-sm text-muted-foreground">registrados</div>
               </CardContent>
             </Card>
             
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-20" onClick={() => setActiveTab("docks")}>
-              <CardContent className="p-3 h-full flex items-center justify-between">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-24" onClick={() => setActiveTab("docks")}>
+              <CardContent className="p-4 h-full flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">Diques Disponibles</div>
-                  <div className="text-lg font-bold">
+                  <div className="text-sm text-muted-foreground">Diques Disponibles</div>
+                  <div className="text-2xl font-bold">
                     {docks.filter(dock => !dock.occupied).length} / {docks.length}
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground">listos</div>
+                <div className="text-sm text-muted-foreground">listos</div>
               </CardContent>
             </Card>
             
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-20" onClick={() => setActiveTab("allocation")}>
-              <CardContent className="p-3 h-full flex items-center justify-between">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-24" onClick={() => setActiveTab("allocation")}>
+              <CardContent className="p-4 h-full flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">Asignaciones</div>
-                  <div className="text-lg font-bold">{allocations.length}</div>
+                  <div className="text-sm text-muted-foreground">Asignaciones</div>
+                  <div className="text-2xl font-bold">{allocations.length}</div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {allocations.filter(a => a.status === 'completed').length}C {allocations.filter(a => a.status === 'in-progress').length}P {allocations.filter(a => a.status === 'scheduled').length}S
+                <div className="text-sm text-muted-foreground">
+                  <div className="flex gap-2 text-xs">
+                    <span className="text-green-600">{allocations.filter(a => a.status === 'completed').length}C</span>
+                    <span className="text-blue-600">{allocations.filter(a => a.status === 'in-progress').length}P</span>
+                    <span className="text-orange-600">{allocations.filter(a => a.status === 'scheduled').length}S</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
           
-          <div className="space-y-3">
-            <Card className="h-80">
-              <CardHeader className="bg-slate-950 pb-1 py-2">
-                <CardTitle className="text-gray-50 text-base">Cronograma de Asignación</CardTitle>
-                <CardDescription className="text-xs text-gray-300">Vista general de asignaciones programadas</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 h-72 overflow-hidden">
-                <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-            {weatherData && <WeatherStatusCard weatherData={weatherData} />}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="xl:col-span-3">
+              <Card>
+                <CardHeader className="bg-slate-950 pb-3">
+                  <CardTitle className="text-gray-50 text-xl">Cronograma de Asignación</CardTitle>
+                  <CardDescription className="text-sm text-gray-300">Vista general de asignaciones programadas</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
+                </CardContent>
+              </Card>
+            </div>
             
-            {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} />}
+            <div className="space-y-4">
+              {weatherData && <WeatherStatusCard weatherData={weatherData} />}
+              
+              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} />}
+            </div>
           </div>
         </TabsContent>
         
