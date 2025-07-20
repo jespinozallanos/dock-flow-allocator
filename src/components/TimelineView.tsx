@@ -155,93 +155,92 @@ const TimelineView: React.FC<TimelineViewProps> = ({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Cronograma de Asignación de Diques</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handlePreviousPeriod}>
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <div className="font-medium min-w-[150px] text-center">
-              {viewMode === "month" 
-                ? formatMonthYear(currentDate)
-                : `Próximos ${days} días`
-              }
-            </div>
-            <Button variant="outline" size="sm" onClick={handleNextPeriod}>
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-base font-medium">Cronograma de Asignación de Diques</h3>
+        <div className="flex gap-1">
+          <Button variant="outline" size="sm" onClick={handlePreviousPeriod} className="h-6 w-6 p-0">
+            <ChevronLeftIcon className="h-3 w-3" />
+          </Button>
+          <div className="font-medium text-xs min-w-[120px] text-center flex items-center">
+            {viewMode === "month" 
+              ? formatMonthYear(currentDate)
+              : `Próximos ${days} días`
+            }
           </div>
+          <Button variant="outline" size="sm" onClick={handleNextPeriod} className="h-6 w-6 p-0">
+            <ChevronRightIcon className="h-3 w-3" />
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div>
         <Tabs defaultValue="timeline" className="w-full">
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="timeline">Cronograma</TabsTrigger>
-              <TabsTrigger value="list">Vista Lista</TabsTrigger>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between mb-3">
+            <TabsList className="h-8">
+              <TabsTrigger value="timeline" className="text-xs px-2">Cronograma</TabsTrigger>
+              <TabsTrigger value="list" className="text-xs px-2">Vista Lista</TabsTrigger>
             </TabsList>
-            <div className="flex items-center justify-between sm:justify-end gap-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              <div className="flex items-center space-x-1">
                 <Switch
                   id="show-tide-windows"
                   checked={showTideWindows}
                   onCheckedChange={setShowTideWindows}
+                  className="scale-75"
                 />
-                <Label htmlFor="show-tide-windows" className="text-sm">
+                <Label htmlFor="show-tide-windows" className="text-xs">
                   Mostrar mareas
                 </Label>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <Button 
                   variant={viewMode === "week" ? "secondary" : "outline"} 
                   size="sm" 
                   onClick={() => setViewMode("week")}
-                  className={`flex items-center gap-1 ${viewMode === "week" ? "text-white" : ""}`}
+                  className="flex items-center gap-1 text-xs h-6 px-2"
                 >
-                  <CalendarIcon className="h-4 w-4" />
+                  <CalendarIcon className="h-3 w-3" />
                   Semana
                 </Button>
                 <Button 
                   variant={viewMode === "month" ? "secondary" : "outline"} 
                   size="sm" 
                   onClick={() => setViewMode("month")}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-xs h-6 px-2"
                 >
-                  <CalendarDaysIcon className="h-4 w-4" />
+                  <CalendarDaysIcon className="h-3 w-3" />
                   Mes
                 </Button>
                 <Button 
                   variant="marine" 
                   size="sm" 
                   onClick={handleTodayClick}
-                  className="flex items-center gap-1 text-black"
+                  className="flex items-center gap-1 text-black text-xs h-6 px-2"
                 >
-                  <CalendarClockIcon className="h-4 w-4" />
+                  <CalendarClockIcon className="h-3 w-3" />
                   Hoy
                 </Button>
               </div>
             </div>
           </div>
           
-          <TabsContent value="timeline" className="space-y-4">
+          <TabsContent value="timeline" className="space-y-3">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse">
                 <thead>
                   <tr>
-                    <th className="w-[100px] p-2 text-left font-medium text-muted-foreground border-r">Diques</th>
+                    <th className="w-[80px] p-1 text-left text-xs font-medium text-muted-foreground border-r">Diques</th>
                     {timelineDays.map((day, index) => {
                       const hasSafeTide = hasSafeTideWindow(day);
                       return (
                         <th 
                           key={index} 
-                          className={`p-2 text-center text-xs font-medium ${showTideWindows && !hasSafeTide ? 'bg-tide-danger/10' : ''}`}
+                          className={`p-1 text-center text-xs font-medium ${showTideWindows && !hasSafeTide ? 'bg-tide-danger/10' : ''}`}
                         >
                           {formatDate(day)}
                           {showTideWindows && !hasSafeTide && (
-                            <div className="flex justify-center mt-1">
-                              <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs bg-tide-danger/20 text-tide-danger">
+                            <div className="flex justify-center mt-0.5">
+                              <span className="inline-flex items-center rounded-full px-1 py-0.5 text-xs bg-tide-danger/20 text-tide-danger">
                                 Marea baja
                               </span>
                             </div>
@@ -254,16 +253,16 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                 <tbody>
                   {docks.map(dock => (
                     <tr key={dock.id} className="border-t">
-                      <td className="p-2 text-sm font-medium border-r">
+                      <td className="p-1 text-xs font-medium border-r">
                         {dock.name}
                         {dock.operationalStatus !== 'operativo' && (
-                          <div className="mt-1">
-                            <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs ${
+                          <div className="mt-0.5">
+                            <span className={`inline-flex items-center rounded-full px-1 py-0.5 text-xs ${
                               dock.operationalStatus === 'mantenimiento' 
                                 ? 'bg-yellow-100 text-yellow-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {dock.operationalStatus === 'mantenimiento' ? 'En Mantención' : 'Fuera de Servicio'}
+                              {dock.operationalStatus === 'mantenimiento' ? 'Mantención' : 'Fuera Servicio'}
                             </span>
                           </div>
                         )}
@@ -278,7 +277,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                         return (
                           <td 
                             key={dayIndex} 
-                            className={`p-1 h-12 relative border ${
+                            className={`p-0.5 h-8 relative border ${
                               dock.operationalStatus !== 'operativo' 
                                 ? 'bg-gray-50' 
                                 : showTideWindows && !hasSafeTide 
@@ -302,16 +301,16 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                   return (
                                     <div 
                                       key={`${allocation.id}-${i}`}
-                                      className={`absolute rounded text-white text-xs p-1 truncate ${getShipTypeClass(ship.type)}`}
+                                      className={`absolute rounded text-white text-xs p-0.5 truncate ${getShipTypeClass(ship.type)}`}
                                       style={{ 
                                         height, 
                                         top, 
-                                        left: '2px', 
-                                        right: '2px' 
+                                        left: '1px', 
+                                        right: '1px' 
                                       }}
                                       title={`${ship.name} (${new Date(allocation.startTime).toLocaleTimeString('es-ES')} - ${new Date(allocation.endTime).toLocaleTimeString('es-ES')})`}
                                     >
-                                      {ship.name}
+                                      <div className="text-xs truncate">{ship.name}</div>
                                     </div>
                                   );
                                 })}
@@ -327,14 +326,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({
             </div>
             
             {showTideWindows && (
-              <div className="flex items-center gap-2 mt-6 text-sm">
+              <div className="flex items-center gap-2 mt-3 text-xs">
                 <span className="font-medium">Leyenda de mareas:</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 bg-tide-danger/20 rounded"></div>
+                  <div className="w-3 h-3 bg-tide-danger/20 rounded"></div>
                   <span>Marea insuficiente</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 bg-transparent border rounded"></div>
+                  <div className="w-3 h-3 bg-transparent border rounded"></div>
                   <span>Marea adecuada</span>
                 </div>
               </div>
@@ -342,9 +341,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({
           </TabsContent>
           
           <TabsContent value="list">
-            <div className="space-y-4">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {allocations.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No hay asignaciones programadas</p>
+                <p className="text-center text-muted-foreground py-4 text-xs">No hay asignaciones programadas</p>
               ) : (
                 allocations.map(allocation => {
                   const ship = getShipById(allocation.shipId);
@@ -356,29 +355,29 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                   }
                   
                   return (
-                    <div key={allocation.id} className="flex items-center gap-4 border-b pb-3">
+                    <div key={allocation.id} className="flex items-center gap-2 border-b pb-2 text-xs">
                       <div className="w-1/4">
-                        <p className="font-medium">{ship.name}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{ship.type === 'container' ? 'Contenedor' : 
+                        <p className="font-medium text-xs">{ship.name}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{ship.type === 'container' ? 'Contenedor' : 
                           ship.type === 'bulk' ? 'Granel' : 
                           ship.type === 'tanker' ? 'Tanquero' : 'Pasajeros'}</p>
                       </div>
                       <div className="w-1/4">
-                        <p className="font-medium">{dock?.name || 'Dique Desconocido'}</p>
-                        <p className="text-sm text-muted-foreground">{dock?.length}m × {dock?.depth}m</p>
+                        <p className="font-medium text-xs">{dock?.name || 'Dique Desconocido'}</p>
+                        <p className="text-xs text-muted-foreground">{dock?.length}m × {dock?.depth}m</p>
                       </div>
-                      <div className="w-1/4">
-                        <p className="text-sm">
+                      <div className="w-1/3">
+                        <p className="text-xs">
                           <span className="text-muted-foreground mr-1">Inicio:</span>
                           {new Date(allocation.startTime).toLocaleString('es-ES')}
                         </p>
-                        <p className="text-sm">
+                        <p className="text-xs">
                           <span className="text-muted-foreground mr-1">Fin:</span>
                           {new Date(allocation.endTime).toLocaleString('es-ES')}
                         </p>
                       </div>
-                      <div className="w-1/4">
-                        <div className={`text-xs inline-flex items-center rounded-full px-2.5 py-0.5 font-medium
+                      <div className="w-1/6">
+                        <div className={`text-xs inline-flex items-center rounded-full px-1.5 py-0.5 font-medium
                           ${allocation.status === 'completed' 
                             ? 'bg-green-100 text-green-800' 
                             : allocation.status === 'in-progress' 
@@ -395,8 +394,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({
             </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

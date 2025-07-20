@@ -71,76 +71,76 @@ const AllocationStatusCard: React.FC<AllocationStatusCardProps> = ({
 
   return (
     <Card className={`${className} overflow-hidden border-l-4 border-l-marine-DEFAULT shadow-md hover:shadow-lg transition-shadow duration-200`}>
-      <CardHeader className="bg-gradient-to-r from-marine-DEFAULT/10 to-transparent pb-2">
-        <CardTitle className="flex items-center gap-2 text-marine-DEFAULT">
-          <TimerIcon className="h-5 w-5" />
+      <CardHeader className="bg-gradient-to-r from-marine-DEFAULT/10 to-transparent pb-1">
+        <CardTitle className="flex items-center gap-2 text-marine-DEFAULT text-base">
+          <TimerIcon className="h-4 w-4" />
           Asignaciones
         </CardTitle>
-        <CardDescription>Asignaciones de diques programadas</CardDescription>
+        <CardDescription className="text-xs">Asignaciones de diques programadas</CardDescription>
       </CardHeader>
       
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         <div className="flex flex-col">
-          <div className="text-4xl font-bold text-marine-DEFAULT mb-2">
+          <div className="text-2xl font-bold text-marine-DEFAULT mb-2">
             {allocations.length}
           </div>
           
-          <div className="flex justify-between items-center mt-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-muted-foreground">
+          <div className="flex justify-between items-center mt-2 mb-2 text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-muted-foreground">
                 {allocations.filter(a => a.status === 'completed').length} Completadas
               </span>
             </div>
             
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-muted-foreground">
                 {allocations.filter(a => a.status === 'in-progress').length} En Progreso
               </span>
             </div>
             
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+              <span className="text-muted-foreground">
                 {allocations.filter(a => a.status === 'scheduled').length} Programadas
               </span>
             </div>
           </div>
 
           {allocations.length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <h4 className="font-medium mb-2">Buques asignados ({allocations.length})</h4>
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {allocations.slice(0, 3).map((allocation) => {
+            <div className="mt-2 pt-2 border-t">
+              <h4 className="font-medium text-xs mb-1">Buques asignados ({allocations.length})</h4>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {allocations.slice(0, 2).map((allocation) => {
                   const ship = getShipById(allocation.shipId);
                   const dock = getDockById(allocation.dockId);
                   
                   if (!ship || !dock) return null;
                   
                   return (
-                    <div key={allocation.id} className="flex items-start gap-2">
-                      <ShipIcon className={`h-5 w-5 mt-0.5 ${getShipTypeClass(ship.type)}`} />
+                    <div key={allocation.id} className="flex items-start gap-1">
+                      <ShipIcon className={`h-3 w-3 mt-0.5 ${getShipTypeClass(ship.type)}`} />
                       <div className="flex-1">
-                        <div className="font-medium">{ship.name}</div>
+                        <div className="font-medium text-xs">{ship.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {translateShipType(ship.type)} • {ship.length}m × {ship.draft}m
+                          {translateShipType(ship.type)} • {ship.length}m
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Dique: {dock.name}
+                          {dock.name}
                         </div>
                       </div>
                     </div>
                   );
                 })}
                 
-                {allocations.length > 3 && (
-                  <div className="text-sm text-muted-foreground text-center">
-                    +{allocations.length - 3} más...
+                {allocations.length > 2 && (
+                  <div className="text-xs text-muted-foreground text-center">
+                    +{allocations.length - 2} más...
                   </div>
                 )}
                 
-                <div className="text-sm text-muted-foreground mt-2">
+                <div className="text-xs text-muted-foreground mt-1">
                   Ocupado hasta: {formatDate(allocations[allocations.length - 1]?.endTime || '')}
                 </div>
               </div>
@@ -148,7 +148,7 @@ const AllocationStatusCard: React.FC<AllocationStatusCardProps> = ({
           )}
           
           {onViewAllocations && (
-            <Button variant="outline" size="sm" onClick={onViewAllocations} className="mt-4 w-full">
+            <Button variant="outline" size="sm" onClick={onViewAllocations} className="mt-2 w-full text-xs h-6">
               Ver detalles
             </Button>
           )}

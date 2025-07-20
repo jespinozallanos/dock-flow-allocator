@@ -304,24 +304,24 @@ const DockAllocationDashboard = () => {
     return shipIds.map(id => getShipById(id)).filter(Boolean) as Ship[];
   };
   return (
-    <div className="container py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
-        <p className="text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
+    <div className="container py-2 max-w-7xl">
+      <div className="mb-4">
+        <h1 className="text-2xl text-marine-DEFAULT font-bold">Sistema de Asignación de Diques</h1>
+        <p className="text-sm text-muted-foreground">Optimización de asignación de diques basado en modelo matemático Python</p>
         {isPythonModelAvailable ? (
-          <div className="flex items-center gap-2 mt-2 bg-green-100 text-green-800 px-3 py-1 rounded-md border border-green-300 w-fit">
-            <BrainCircuitIcon className="h-4 w-4" />
-            <span className="text-sm font-medium">Modelo Matemático Python Conectado</span>
+          <div className="flex items-center gap-2 mt-1 bg-green-100 text-green-800 px-2 py-1 rounded-md border border-green-300 w-fit">
+            <BrainCircuitIcon className="h-3 w-3" />
+            <span className="text-xs font-medium">Modelo Matemático Python Conectado</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 mt-2 bg-red-100 text-red-800 px-3 py-1 rounded-md border border-red-300 w-fit">
-            <BrainCircuitIcon className="h-4 w-4" />
-            <span className="text-sm font-medium">Modelo Python No Disponible - Verifica la conexión</span>
+          <div className="flex items-center gap-2 mt-1 bg-red-100 text-red-800 px-2 py-1 rounded-md border border-red-300 w-fit">
+            <BrainCircuitIcon className="h-3 w-3" />
+            <span className="text-xs font-medium">Modelo Python No Disponible - Verifica la conexión</span>
           </div>
         )}
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
         <div className="flex justify-between items-center bg-slate-900">
           <TabsList className="bg-slate-900">
             <TabsTrigger value="dashboard" className="flex items-center gap-1">
@@ -347,25 +347,25 @@ const DockAllocationDashboard = () => {
           </TabsList>
         </div>
         
-        <TabsContent value="dashboard" className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <TabsContent value="dashboard" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("ships")}>
-              <CardHeader className="pb-2">
-                <CardTitle>Buques</CardTitle>
-                <CardDescription>Buques registrados actualmente</CardDescription>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-base">Buques</CardTitle>
+                <CardDescription className="text-xs">Buques registrados actualmente</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{ships.length}</div>
+                <div className="text-2xl font-bold">{ships.length}</div>
               </CardContent>
             </Card>
             
             <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setActiveTab("docks")}>
-              <CardHeader className="pb-2">
-                <CardTitle>Diques Disponibles</CardTitle>
-                <CardDescription>Listos para asignación</CardDescription>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-base">Diques Disponibles</CardTitle>
+                <CardDescription className="text-xs">Listos para asignación</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">
+                <div className="text-2xl font-bold">
                   {docks.filter(dock => !dock.occupied).length} / {docks.length}
                 </div>
               </CardContent>
@@ -376,47 +376,65 @@ const DockAllocationDashboard = () => {
               ships={ships}
               docks={docks}
               onViewAllocations={() => setActiveTab("allocation")} 
+              className="h-auto"
             />
           </div>
           
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            <div className="xl:col-span-3 space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+            <div className="xl:col-span-3 space-y-4">
               <Card>
-                <CardHeader className="bg-slate-950">
-                  <CardTitle className="text-gray-50">Cronograma de Asignación</CardTitle>
-                  <CardDescription>Vista general de asignaciones programadas</CardDescription>
+                <CardHeader className="bg-slate-950 pb-2">
+                  <CardTitle className="text-gray-50 text-lg">Cronograma de Asignación</CardTitle>
+                  <CardDescription className="text-xs text-gray-300">Vista general de asignaciones programadas</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3">
                   <TimelineView allocations={allocations} ships={ships} docks={docks} weatherData={weatherData || undefined} />
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-marine-DEFAULT text-xl">Buques Registrados</CardTitle>
-                    <CardDescription>Listado de todos los buques en el sistema</CardDescription>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-marine-DEFAULT text-base">Buques Registrados</CardTitle>
+                    <CardDescription className="text-xs">Listado de todos los buques en el sistema</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ShipsTable ships={ships} onUpdateShip={handleUpdateShip} />
+                  <CardContent className="p-3">
+                    <ShipsTable ships={ships.slice(0, 5)} onUpdateShip={handleUpdateShip} />
+                    {ships.length > 5 && (
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        +{ships.length - 5} buques más...
+                      </p>
+                    )}
                   </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto">
+                  <CardFooter className="pt-2">
+                    <Button variant="outline" onClick={() => setActiveTab("ships")} className="ml-auto text-xs h-8">
                       Gestionar Buques
                     </Button>
                   </CardFooter>
                 </Card>
-              </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {docks.map(dock => <DockCard key={dock.id} dock={dock} ships={getShipsFromOccupiedString(dock.occupiedBy)} />)}
+                <div className="space-y-3">
+                  {docks.slice(0, 3).map(dock => 
+                    <DockCard 
+                      key={dock.id} 
+                      dock={dock} 
+                      ships={getShipsFromOccupiedString(dock.occupiedBy)}
+                      className="h-auto"
+                    />
+                  )}
+                  {docks.length > 3 && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      +{docks.length - 3} diques más...
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {weatherData && <WeatherStatusCard weatherData={weatherData} />}
               
-              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} className="mb-4" />}
+              {weatherData?.tide.windows && <TideWindowDisplay tideWindows={weatherData.tide.windows} className="mb-3" />}
             </div>
           </div>
         </TabsContent>

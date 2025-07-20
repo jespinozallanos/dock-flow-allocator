@@ -36,39 +36,38 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip, onDeleteSh
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Ship Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Size</TableHead>
-            <TableHead>Arrival</TableHead>
-            <TableHead>Departure</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-xs py-2">Nombre</TableHead>
+            <TableHead className="text-xs py-2">Tipo</TableHead>
+            <TableHead className="text-xs py-2">Tamaño</TableHead>
+            <TableHead className="text-xs py-2">Llegada</TableHead>
+            <TableHead className="text-xs py-2">Prioridad</TableHead>
+            <TableHead className="text-right text-xs py-2">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {ships.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
-                No ships available
+              <TableCell colSpan={6} className="h-16 text-center text-xs">
+                No hay buques disponibles
               </TableCell>
             </TableRow>
           ) : (
             ships.map((ship) => (
               <TableRow key={ship.id}>
-                <TableCell className="font-medium">{ship.name}</TableCell>
-                <TableCell className="capitalize">{ship.type}</TableCell>
-                <TableCell>{ship.length}m × {ship.draft}m</TableCell>
-                <TableCell>{formatDate(ship.arrivalTime)}</TableCell>
-                <TableCell>{formatDate(ship.departureTime)}</TableCell>
-                <TableCell>{getPriorityLabel(ship.priority)}</TableCell>
-                <TableCell className="text-right space-x-2">
+                <TableCell className="font-medium text-xs py-2">{ship.name}</TableCell>
+                <TableCell className="capitalize text-xs py-2">{ship.type}</TableCell>
+                <TableCell className="text-xs py-2">{ship.length}m × {ship.draft}m</TableCell>
+                <TableCell className="text-xs py-2">{formatDate(ship.arrivalTime)}</TableCell>
+                <TableCell className="text-xs py-2">{getPriorityLabel(ship.priority)}</TableCell>
+                <TableCell className="text-right space-x-1 py-2">
                   {onSelectShip && (
                     <Button 
                       variant="marine"
                       onClick={() => onSelectShip(ship.id)}
                       size="sm"
+                      className="text-xs h-6 px-2"
                     >
-                      Allocate
+                      Asignar
                     </Button>
                   )}
                   {onUpdateShip && (
@@ -82,8 +81,9 @@ const ShipsTable: React.FC<ShipsTableProps> = ({ ships, onSelectShip, onDeleteSh
                       variant="destructive"
                       onClick={() => onDeleteShip(ship.id)}
                       size="sm"
+                      className="h-6 w-6 p-0"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
                 </TableCell>
