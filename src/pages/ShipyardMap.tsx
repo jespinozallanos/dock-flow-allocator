@@ -362,11 +362,12 @@ const ShipyardMap: React.FC = () => {
           </Card>
         </div>
       </div>
+      </div>
+      </div>
+      
+      {/* Footer stripe */}
+      <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-marine-DEFAULT to-marine-light z-10"></div>
     </div>
-    
-    {/* Footer stripe */}
-    <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-marine-DEFAULT to-marine-light z-10"></div>
-  </div>
   );
 };
 
